@@ -10,6 +10,17 @@ namespace HashFiles
     {
         static void Main(string[] args)
         {
+            if(args.Length == 0)
+            {
+                Console.WriteLine("Запуск без парамметров.");
+            }
+            else
+            {
+                // Начать поиска файлов
+                Task.Run(() => FindFiles.GetFiles(args));
+            }
+
+            Console.ReadKey();
         }
     }
 }
