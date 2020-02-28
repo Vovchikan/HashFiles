@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace HashFiles
 {
     class Program
     {
-        private static Queue<string> hashSums = new Queue<string>();
+        private static MyTaskQueue<string> hashSums = new MyTaskQueue<string>();
         private delegate string MyHashFunc(string fileName);
-        private static bool search = true;
 
         static void Main(string[] args)
         {
@@ -29,33 +29,46 @@ namespace HashFiles
                     }
                     finally
                     {
-                        search = false;
+                        Task.Delay(1000);
                     }
                 });
 
                 // Рассчитать хэш-суммы для файлов
-                Task compute = Task.Run(() =>
+                Action acompute = () =>
                 {
-                    int qc = 0;
-                    while (search || qc > 0)
+                    while (find.Status == TaskStatus.Running || FindFiles.files.Count() > 0)
                     {
                         try
                         {
-                            var res = FindFiles.TakeFromStorage();
-                            qc = res.Item2;
-                            computeHashSums(HashFunc.ComputeMD5Checksum, res.Item1);
+                            var fileName = FindFiles.files.Dequeue();
+                            computeHashSums(HashFunc.ComputeMD5Checksum, fileName);
                         }
-                        catch (InvalidOperationException)
+                        catch (InvalidOperationException ex) when (ex.Message == "Empty")
                         {
                             //Если хранилище пустое - ждать
-                            Task.Delay(300);
+                            Task.Delay(100);
                         }
                     }
+                };
+
+                int computTasksCount = 2;
+                Task compute = Task.Run(() =>
+                {
+                    List<Task> tasks = new List<Task>();
+                    for (int i = 0; i < computTasksCount; i++)
+                    {
+                        tasks.Add(Task.Run(acompute));
+                    }
+                    Task.WaitAll(tasks.ToArray());
                 });
 
                 // Добавить файлы в бд
+                Task bdWriter = Task.Run(() =>
+                {
+                    // Бд
+                });
 
-                Task.WaitAll(find, compute);
+                Task.WaitAll(find, compute, bdWriter);
             }
 
             Console.WriteLine("Работа закончена.");
@@ -78,19 +91,15 @@ namespace HashFiles
             finally
             {
                 errors = string.IsNullOrEmpty(errors) ? "No errors." : errors;
-                hashSum = string.IsNullOrEmpty(errors) ? "No hashsum" : hashSum;
+                hashSum = string.IsNullOrEmpty(errors) ? "No hashsum" : hashSum; // Не работает, проверить!
                 addHashSum(hashSum, fileName, errors);
             }
         }
 
         private static void addHashSum(string hashSum, string fileName, string errors="", string sep=" ")
         {
-            lock (hashSums)
-            {
-                var res = string.Join(sep, fileName, hashSum, errors);
-                hashSums.Enqueue(res);
-                Console.WriteLine(res);
-            }
+            var res = string.Join(sep, fileName, hashSum, errors, Thread.CurrentThread.ManagedThreadId);
+            hashSums.Enqueue(res);
         }
 
     }

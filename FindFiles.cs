@@ -9,7 +9,7 @@ namespace HashFiles
 {
     static class FindFiles
     {
-        public static Queue<string> files = new Queue<string>();
+        public static MyTaskQueue<string> files = new MyTaskQueue<string>();
 
         public static void GetFiles(params string[] args)
         {
@@ -56,16 +56,7 @@ namespace HashFiles
 
         private static void processFile(string targetFile)
         {
-            addToQueue(targetFile);
-            Console.WriteLine(targetFile);
-        }
-
-        private static void addToQueue(string targetFile)
-        {
-            lock (FindFiles.files)
-            {
-                files.Enqueue(targetFile);
-            }
+            files.Enqueue(targetFile);
         }
 
         /// <summary>
@@ -78,7 +69,7 @@ namespace HashFiles
             {
                 lock (FindFiles.files)
                 {
-                    return new Tuple<string, int>(files.Dequeue(), files.Count);
+                    return files.DequeueAndCount();
                 }
             }
             catch (InvalidOperationException)

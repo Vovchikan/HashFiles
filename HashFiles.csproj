@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="FindFiles.cs" />
     <Compile Include="HashFunc.cs" />
+    <Compile Include="MyTaskQueue.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
