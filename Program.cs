@@ -52,23 +52,22 @@ namespace HashFiles
                 };
 
                 int computTasksCount = 2;
-                Task compute = Task.Run(() =>
+                List<Task> tasks = new List<Task>();
+                for (int i = 0; i < computTasksCount; i++)
                 {
-                    List<Task> tasks = new List<Task>();
-                    for (int i = 0; i < computTasksCount; i++)
-                    {
-                        tasks.Add(Task.Run(acompute));
-                    }
-                    Task.WaitAll(tasks.ToArray());
-                });
+                    tasks.Add(Task.Run(acompute));
+                }
+
+                tasks.Add(find);
 
                 // Добавить файлы в бд
                 Task bdWriter = Task.Run(() =>
                 {
                     // Бд
                 });
+                tasks.Add(bdWriter);
 
-                Task.WaitAll(find, compute, bdWriter);
+                Task.WaitAll(tasks.ToArray());
             }
 
             Console.WriteLine("Работа закончена.");
