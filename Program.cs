@@ -14,66 +14,48 @@ namespace HashFiles
 
         static void Main(string[] args)
         {
-            if(args.Length == 0)
+            if (args.Length == 0)
             {
                 Console.WriteLine("Запуск без парамметров.");
             }
-            else
+
+            var f = runThreadForFindFiles(args);
+
+            // Рассчитать хэш-суммы для файлов
+            var thrs = runThreadsForHF(f);
+            // Добавить файлы в бд
+            Thread bdWriter = new Thread(new ThreadStart(() =>
             {
-                // Начать поиска файлов
-                Task find = Task.Run(() =>
-                {
-                    try
-                    {
-                        FindFiles.GetFiles(args);
-                    }
-                    finally
-                    {
-                        Task.Delay(1000);
-                    }
-                });
+                // Бд
+            }));
+            bdWriter.Start();
 
-                // Рассчитать хэш-суммы для файлов
-                Action acompute = () =>
-                {
-                    while (find.Status == TaskStatus.Running || FindFiles.files.Count() > 0)
-                    {
-                        try
-                        {
-                            var fileName = FindFiles.files.Dequeue();
-                            var res = computeHashSums(HashFunc.ComputeMD5Checksum, fileName, sep);
-                            addHashSum(res);
-                        }
-                        catch (InvalidOperationException ex) when (ex.Message == "Empty")
-                        {
-                            //Если хранилище пустое - ждать
-                            Task.Delay(100);
-                        }
-                    }
-                };
 
-                int computTasksCount = 2;
-                List<Task> tasks = new List<Task>();
-                for (int i = 0; i < computTasksCount; i++)
-                {
-                    tasks.Add(Task.Run(acompute));
-                }
-
-                tasks.Add(find);
-
-                // Добавить файлы в бд
-                Task bdWriter = Task.Run(() =>
-                {
-                    // Бд
-                });
-                tasks.Add(bdWriter);
-
-                Task.WaitAll(tasks.ToArray());
-            }
+            f.Join();
+            foreach (var thr in thrs)
+                thr.Join();
+            bdWriter.Join();
 
             Console.WriteLine("Работа закончена.");
             Console.ReadKey();
 
+        }
+
+        private static Thread runThreadForFindFiles(params string[] args)
+        {
+            var f = new Thread(new ThreadStart(() =>
+            {
+                try
+                {
+                    FindFiles.GetFiles(args);
+                }
+                finally
+                {
+                    Thread.Sleep(1000);
+                }
+            }));
+            f.Start();
+            return f;
         }
 
         #region work with HashFunc class
@@ -107,22 +89,56 @@ namespace HashFiles
         {
             hashSums.Enqueue(res);
         }
+
+        private static Thread[] runThreadsForHF(Thread threadFindFiles, int computeThreadsCount=2)
+        {
+            Thread[] th = new Thread[computeThreadsCount];
+            for (int i = 0; i < computeThreadsCount; i++)
+            {
+                Thread compute = new Thread(new ThreadStart(() =>
+                {
+                    while (threadFindFiles.ThreadState == ThreadState.Running || 
+                    FindFiles.files.Count() > 0)
+                    {
+                        try
+                        {
+                            var fileName = FindFiles.files.Dequeue();
+                            var res = computeHashSums(HashFunc.ComputeMD5Checksum, fileName, sep);
+                            addHashSum(res);
+                        }
+                        catch (InvalidOperationException ex) when (ex.Message == "Empty")
+                        {
+                            //Если хранилище пустое - ждать
+                            Task.Delay(100);
+                        }
+                    }
+                }));
+                compute.Start();
+                th[i] = compute;
+            }
+            return th;
+        }
         #endregion
 
-        private static void writeToBD()
+        private static Thread runThreadForWriteToBD() // !!!!!!!!!!!!!!!!!!!!!!!!
         {
-            var helper = new MySqlServerHelper();
-            using (SqlConnection sqlCon = helper.NewConnection())
-            {
-                sqlCon.Open();
-                helper.TryCreateTable(sqlCon);
-                while (hashSums.Count() > 0)
+            Thread bdWriter = new Thread(new ThreadStart(() =>
+            { 
+                var helper = new MySqlServerHelper();
+                using (SqlConnection sqlCon = helper.NewConnection())
                 {
-                    var res = hashSums.Dequeue().Split(sep.ToCharArray(),
-                        StringSplitOptions.RemoveEmptyEntries);
-                    helper.AddHashSum(sqlCon, res);
+                    sqlCon.Open();
+                    helper.TryCreateTable(sqlCon);
+                    while (hashSums.Count() > 0)
+                    {
+                        var res = hashSums.Dequeue().Split(sep.ToCharArray(),
+                            StringSplitOptions.RemoveEmptyEntries);
+                        helper.AddHashSum(sqlCon, res);
+                    }
                 }
-            }
+            }));
+            bdWriter.Start();
+            return bdWriter;
         }
 
     }
