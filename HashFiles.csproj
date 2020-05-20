@@ -43,10 +43,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FindFiles.cs" />
+    <Compile Include="RecursiveFilesCollector.cs" />
     <Compile Include="HashFunc.cs" />
     <Compile Include="MySqlServerHelper.cs" />
-    <Compile Include="MyTaskQueue.cs" />
+    <Compile Include="MyConcurrentQueue.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -7,8 +7,9 @@ namespace HashFiles
 {
     class Program
     {
+        private static MyConcurrentQueue<string> fullFilePaths = new MyConcurrentQueue<string>();
         private static MyConcurrentQueue<string> hashSums = new MyConcurrentQueue<string>();
-        private delegate string MyHashFunc(string fileName);
+        private delegate string MyHashFunc(string file);
         private static string sep = "_";
 
         static void Main(string[] args)
@@ -20,15 +21,14 @@ namespace HashFiles
                 args = Console.ReadLine().Split(' ');
             }
 
-            var f = runThreadForFindFiles(args);
+            Thread threadFilesCollection = runThreadToCollectFiles(args);
 
-            // Рассчитать хэш-суммы для файлов
-            var thrs = runThreadsForHF(f);
-            // Добавить файлы в бд
-            var bdWriter = runThreadForWriteToBD(thrs);
+            Thread[] threadsHashSumsCalculation = runThreadsToCalculateHashSums(threadFilesCollection);
+            
+            Thread bdWriter = runThreadForWriteToBD(threadsHashSumsCalculation);
 
-            f.Join();
-            foreach (var thr in thrs)
+            threadFilesCollection.Join();
+            foreach (var thr in threadsHashSumsCalculation)
                 thr.Join();
             bdWriter.Join();
 
@@ -37,13 +37,13 @@ namespace HashFiles
 
         }
 
-        private static Thread runThreadForFindFiles(params string[] args)
+        private static Thread runThreadToCollectFiles(params string[] paths)
         {
             var f = new Thread(new ThreadStart(() =>
             {
                 try
                 {
-                    FindFiles.GetFiles(args);
+                    fullFilePaths = RecursiveFilesCollector.GetFileQueue(paths);
                 }
                 finally
                 {
@@ -54,52 +54,20 @@ namespace HashFiles
             return f;
         }
 
-        #region work with HashFunc class
-        /// <summary>
-        /// Использвует хэш-функцию hf для подсчёта хэш-суммы
-        /// файла fileName. Добавляет инфу об ошибках в результат.
-        /// Возвращает строку - string.Join(sep, fileName, hashSum, errors).
-        /// </summary>
-        private static string computeHashSums(MyHashFunc hf, string fileName, string sep=" ")
-        {
-            string  hashSum ="", errors="", res;
-            try
-            {
-                hashSum = hf(fileName);
-            }
-            catch (HashFunc.HashFuncException ex)
-            {
-                // Поймать исключение у хэш-функции
-                errors = ex.Message;
-            }
-            finally
-            {
-                errors = string.IsNullOrEmpty(errors) ? "NoErrors." : errors;
-                if (hashSum == "") hashSum = "NoHashSum"; 
-                res = string.Join(sep, fileName, hashSum, errors);
-            }
-            return res;
-        }
-
-        private static void addHashSum(string res)
-        {
-            hashSums.Enqueue(res);
-        }
-
-        private static Thread[] runThreadsForHF(Thread threadFindFiles, int computeThreadsCount=2)
+        private static Thread[] runThreadsToCalculateHashSums(Thread threadFilesCollector, int computeThreadsCount=2)
         {
             Thread[] th = new Thread[computeThreadsCount];
             for (int i = 0; i < computeThreadsCount; i++)
             {
                 Thread compute = new Thread(new ThreadStart(() =>
                 {
-                    while (threadFindFiles.ThreadState == ThreadState.Running || 
-                    FindFiles.files.Count() > 0)
+                    while (threadFilesCollector.ThreadState == ThreadState.Running || 
+                    fullFilePaths.Count() > 0)
                     {
                         try
                         {
-                            var fileName = FindFiles.files.Dequeue();
-                            var res = computeHashSums(HashFunc.ComputeMD5Checksum, fileName, sep);
+                            var fullFilePath = fullFilePaths.Dequeue();
+                            var res = calculateFileHashSum(HashFunc.ComputeMD5Checksum, fullFilePath, sep);
                             addHashSum(res);
                         }
                         catch (InvalidOperationException ex) when (ex.Message == "Empty")
@@ -114,7 +82,31 @@ namespace HashFiles
             }
             return th;
         }
-        #endregion
+
+        private static string calculateFileHashSum(MyHashFunc hf, string fileName, string sep = " ")
+        {
+            string hashSum = "", errors = "", res;
+            try
+            {
+                hashSum = hf(fileName);
+            }
+            catch (HashFunc.HashFuncException ex)
+            {
+                errors = ex.Message;
+            }
+            finally
+            {
+                errors = string.IsNullOrEmpty(errors) ? "NoErrors." : errors;
+                if (hashSum == "") hashSum = "NoHashSum";
+                res = string.Join(sep, fileName, hashSum, errors);
+            }
+            return res;
+        }
+
+        private static void addHashSum(string res)
+        {
+            hashSums.Enqueue(res);
+        }
 
         private static Thread runThreadForWriteToBD(Thread[] computeThreads)
         {
