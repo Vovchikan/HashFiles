@@ -9,11 +9,12 @@ namespace HashFiles
 {
     public static class RecursiveFilesCollector
     {
-        private static MyConcurrentQueue<string> filesQueue = new MyConcurrentQueue<string>();
+        private static MyConcurrentQueue<string> filesQueue;
 
         public static MyConcurrentQueue<string> GetFileQueue(params string[] paths)
         {
-            if(paths.Length > 0)
+            filesQueue = new MyConcurrentQueue<string>();
+            if (paths.Length > 0)
                 enqueueAllFiles(paths);
 
             return filesQueue;
@@ -33,6 +34,8 @@ namespace HashFiles
                     // Путь указывает на папку -> Добавить файлы/папки из неё в очередь
                     recursivelyEnqueueDirs(path);
                 }
+                else
+                    throw new ArgumentException(String.Format("Wrong path {0}", path));
             }
         }
 
