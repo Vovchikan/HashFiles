@@ -10,13 +10,6 @@ namespace HashFiles
         private bool showDublicate = true;
 
         #region Constructors
-        public MySqlServerHelper()
-        {
-            builder = new SqlConnectionStringBuilder();
-            builder.DataSource = "(local)";
-            builder.InitialCatalog = "HashHash";
-            builder.IntegratedSecurity = true;
-        }
 
         public MySqlServerHelper(string dataSource, string initialCatalog,
             bool integratedSecurity)
@@ -55,7 +48,20 @@ namespace HashFiles
             }
         }
 
-        public void AddHashSum(SqlConnection sqlCon, string fileName, 
+        
+        public void AddHashSum(SqlConnection sqlCon, params string[] parametrs)
+        {
+            if(showAddingToConsole) Console.WriteLine("Добаваляем: " + string.Join(" ", parametrs));
+            if(parametrs.Length == 3)
+            {
+                string fileName = parametrs[0];
+                string hashSum = parametrs[1];
+                string errors = parametrs[2];
+                this.AddHashSum(sqlCon, fileName, hashSum, errors);
+            }
+        }
+
+        public void AddHashSum(SqlConnection sqlCon, string fileName,
             string hashSum, string errors)
         {
             try
@@ -73,18 +79,6 @@ namespace HashFiles
             catch
             {
                 Console.WriteLine("Count not insert.");
-            }
-        }
-        
-        public void AddHashSum(SqlConnection sqlCon, params string[] parametrs)
-        {
-            if(showAddingToConsole) Console.WriteLine("Добаваляем: " + string.Join(" ", parametrs));
-            if(parametrs.Length == 3)
-            {
-                string fileName = parametrs[0];
-                string hashSum = parametrs[1];
-                string errors = parametrs[2];
-                this.AddHashSum(sqlCon, fileName, hashSum, errors);
             }
         }
 

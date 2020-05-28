@@ -11,6 +11,8 @@ namespace HashFiles
         private static MyConcurrentQueue<string> hashSums = new MyConcurrentQueue<string>();
         private delegate string MyHashFunc(string file);
         private static string sep = "_";
+        private static String DataSource = "(localdb)MSSQLLocalDB";
+        private static String InitialCatalog = "DATABASE1";
 
         static void Main(string[] args)
         {
@@ -68,7 +70,7 @@ namespace HashFiles
                         {
                             var fullFilePath = fullFilePaths.Dequeue();
                             var res = calculateFileHashSum(HashFunc.ComputeMD5Checksum, fullFilePath, sep);
-                            addHashSum(res);
+                            hashSums.Enqueue(res);
                         }
                         catch (InvalidOperationException ex) when (ex.Message == "Empty")
                         {
@@ -103,16 +105,11 @@ namespace HashFiles
             return res;
         }
 
-        private static void addHashSum(string res)
-        {
-            hashSums.Enqueue(res);
-        }
-
         private static Thread runThreadForWriteToBD(Thread[] computeThreads)
         {
             Thread bdWriter = new Thread(new ThreadStart(() =>
             {
-                var helper = new MySqlServerHelper();
+                var helper = new MySqlServerHelper(GetConnectionStringForLocalDB());
                 using (SqlConnection sqlCon = helper.NewConnection())
                 {
                     sqlCon.Open();
@@ -142,5 +139,11 @@ namespace HashFiles
             return bdWriter;
         }
 
+        private static String GetConnectionStringForLocalDB()
+        {
+            return @"Data Source = (localdb)\MSSQLLocalDB;
+                AttachDbFilename=D:\Programming\C#\Github-portfolio\HashFiles\Database1.mdf;
+                Integrated Security=True;Connect Timeout=30;";
+        }
     }
 }
