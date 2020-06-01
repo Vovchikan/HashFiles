@@ -58,8 +58,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="hashFunction\HashFunction.cs" />
+    <Compile Include="hashFunction\HashFunctionException.cs" />
+    <Compile Include="hashFunction\HashFunctionResult.cs" />
     <Compile Include="RecursiveFilesCollector.cs" />
-    <Compile Include="HashFunc.cs" />
     <Compile Include="MySqlServerHelper.cs" />
     <Compile Include="MyConcurrentQueue.cs" />
     <Compile Include="Program.cs" />
@@ -67,7 +69,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Database1.mdf">

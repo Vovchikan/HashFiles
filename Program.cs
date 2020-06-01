@@ -8,11 +8,8 @@ namespace HashFiles
     class Program
     {
         private static MyConcurrentQueue<string> fullFilePaths = new MyConcurrentQueue<string>();
-        private static MyConcurrentQueue<string> hashSums = new MyConcurrentQueue<string>();
+        private static MyConcurrentQueue<HashFunctionResult> hashSums = new MyConcurrentQueue<HashFunctionResult>();
         private delegate string MyHashFunc(string file);
-        private static string sep = "_";
-        private static String DataSource = "(localdb)MSSQLLocalDB";
-        private static String InitialCatalog = "DATABASE1";
 
         static void Main(string[] args)
         {
@@ -69,8 +66,8 @@ namespace HashFiles
                         try
                         {
                             var fullFilePath = fullFilePaths.Dequeue();
-                            var res = calculateFileHashSum(HashFunc.ComputeMD5Checksum, fullFilePath, sep);
-                            hashSums.Enqueue(res);
+                            var result = HashFunction.ComputeMD5Checksum(fullFilePath);
+                            hashSums.Enqueue(result);
                         }
                         catch (InvalidOperationException ex) when (ex.Message == "Empty")
                         {
@@ -83,26 +80,6 @@ namespace HashFiles
                 th[i] = compute;
             }
             return th;
-        }
-
-        private static string calculateFileHashSum(MyHashFunc hf, string fileName, string sep = " ")
-        {
-            string hashSum = "", errors = "", res;
-            try
-            {
-                hashSum = hf(fileName);
-            }
-            catch (HashFunc.HashFuncException ex)
-            {
-                errors = ex.Message;
-            }
-            finally
-            {
-                errors = string.IsNullOrEmpty(errors) ? "NoErrors." : errors;
-                if (hashSum == "") hashSum = "NoHashSum";
-                res = string.Join(sep, fileName, hashSum, errors);
-            }
-            return res;
         }
 
         private static Thread runThreadForWriteToBD(Thread[] computeThreads)
@@ -118,19 +95,17 @@ namespace HashFiles
                     {
                         try
                         {
-                            string[] res = hashSums.DequeueAll();
-                            foreach (string stringParametr in res)
+                            HashFunctionResult[] results = hashSums.DequeueAll();
+                            foreach (var result in results)
                             {
-                                var parametrs = stringParametr.Split(sep.ToCharArray(),
-                                    StringSplitOptions.RemoveEmptyEntries);
-                                if(!helper.CheckContains(sqlCon, parametrs))
-                                    helper.AddHashSum(sqlCon, parametrs);
+                                if(!helper.CheckContains(sqlCon, result))
+                                    helper.AddHashSum(sqlCon, result);
                             }
-                            if (res.Length == 0) Thread.Sleep(2000);
+                            if (results.Length == 0) Thread.Sleep(2000);
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Error with message - {0}\n{1}", ex.Message, ex.StackTrace);
+                            Console.WriteLine("ERROR MESSAGE - {0}\n{1}", ex.Message, ex.StackTrace);
                         }
                     }
                 }

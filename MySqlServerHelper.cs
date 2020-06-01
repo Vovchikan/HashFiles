@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 
 namespace HashFiles
@@ -37,7 +38,7 @@ namespace HashFiles
             {
                 using(SqlCommand command = new SqlCommand(
                     "CREATE TABLE HASHRESULTS (FileName VARCHAR(MAX), HashSum VARCHAR(MAX), " +
-                    "Errors VARCHAR(MAX))", sqlCon))
+                    "Errors NVARCHAR(MAX))", sqlCon))
                 {
                     command.ExecuteNonQuery();
                 }
@@ -49,20 +50,13 @@ namespace HashFiles
         }
 
         
-        public void AddHashSum(SqlConnection sqlCon, params string[] parametrs)
+        public void AddHashSum(SqlConnection sqlCon, HashFunctionResult result)
         {
-            if(showAddingToConsole) Console.WriteLine("Добаваляем: " + string.Join(" ", parametrs));
-            if(parametrs.Length == 3)
-            {
-                string fileName = parametrs[0];
-                string hashSum = parametrs[1];
-                string errors = parametrs[2];
-                this.AddHashSum(sqlCon, fileName, hashSum, errors);
-            }
+            if(showAddingToConsole) Console.WriteLine("Добаваляем: " + result.ToString());
+            TryInsertNewData(sqlCon, result);
         }
 
-        public void AddHashSum(SqlConnection sqlCon, string fileName,
-            string hashSum, string errors)
+        public void TryInsertNewData(SqlConnection sqlCon, HashFunctionResult result)
         {
             try
             {
@@ -70,46 +64,40 @@ namespace HashFiles
                     "INSERT INTO HASHRESULTS (FileName, HashSum, Errors) " +
                     "VALUES(@FileName, @HashSum, @Errors)", sqlCon))
                 {
-                    command.Parameters.Add(new SqlParameter("@FileName", fileName));
-                    command.Parameters.Add(new SqlParameter("@HashSum", hashSum));
-                    command.Parameters.Add(new SqlParameter("@Errors", errors));
+                    command.Parameters.Add(new SqlParameter("@FileName", result.filePath));
+                    command.Parameters.Add(new SqlParameter("@HashSum", result.hashSum));
+                    command.Parameters.Add(new SqlParameter("@Errors", SqlDbType.NVarChar) { Value = result.error.ErrorMessage });
                     command.ExecuteNonQuery();
                 }
             }
             catch
             {
-                Console.WriteLine("Count not insert.");
+                throw new Exception("Не удалось добавить данные: " + result.ToString());
             }
         }
 
-        public bool CheckContains(SqlConnection sqlCon, params string[] parametrs)
+        public bool CheckContains(SqlConnection sqlCon, HashFunctionResult result)
         {
-            if (parametrs.Length == 3)
+            try
             {
-                try
+                using (SqlCommand command = new SqlCommand(
+                    "SELECT * FROM HASHRESULTS " +
+                    "WHERE FileName = @FileName AND HashSum = @HashSum", sqlCon))
                 {
-                    string fileName = parametrs[0];
-                    string hashSum = parametrs[1];
-                    using (SqlCommand command = new SqlCommand(
-                        "SELECT * FROM HASHRESULTS " +
-                        "WHERE FileName = @FileName AND HashSum = @HashSum", sqlCon))
-                    {
-                        command.Parameters.AddWithValue("@FileName", fileName);
-                        command.Parameters.AddWithValue("@HashSum", hashSum);
-                        using (SqlDataReader reader = command.ExecuteReader())
-                            while (reader.Read())
-                            {
-                                reader.Close();
-                                if(showDublicate) Console.WriteLine("Дубликат: {0} {1}", fileName, hashSum);
-                                return true;
-                            }
-                    }
+                    command.Parameters.AddWithValue("@FileName", result.filePath);
+                    command.Parameters.AddWithValue("@HashSum", result.hashSum);
+                    using (SqlDataReader reader = command.ExecuteReader())
+                        while (reader.Read())
+                        {
+                            reader.Close();
+                            if (showDublicate) Console.WriteLine("Дубликат: {0} {1}", result.filePath, result.hashSum);
+                            return true;
+                        }
                 }
-                catch (Exception)
-                {
-                    Console.WriteLine("filename = {0}, hashSum = {1}", parametrs[0], parametrs[1]);
-                    throw ;
-                }
+            }
+            catch
+            {
+                throw new Exception(String.Format("Ошибка в поиске данных: path = {0}, hashSum = {1}", result.filePath, result.hashSum));
             }
             return false;
         }
