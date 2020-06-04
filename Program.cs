@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading;
-using System.Data.SqlClient;
 using System.Linq;
 
 namespace HashFiles
@@ -9,7 +8,6 @@ namespace HashFiles
     {
         private static MyConcurrentQueue<string> fullFilePaths = new MyConcurrentQueue<string>();
         private static MyConcurrentQueue<HashFunctionResult> hashSums = new MyConcurrentQueue<HashFunctionResult>();
-        private delegate string MyHashFunc(string file);
 
         static void Main(string[] args)
         {
@@ -87,28 +85,14 @@ namespace HashFiles
             Thread bdWriter = new Thread(new ThreadStart(() =>
             {
                 var helper = new MySqlServerHelper(GetConnectionStringForLocalDB());
-                using (SqlConnection sqlCon = helper.NewConnection())
+                helper.NewConnection();
+                helper.OpenConnection();
+                helper.TryCreateTable();
+                while (computeThreads.Any(w => w.ThreadState == ThreadState.Running) || hashSums.Count() > 0)
                 {
-                    sqlCon.Open();
-                    helper.TryCreateTable(sqlCon);
-                    while (computeThreads.Any(w => w.ThreadState == ThreadState.Running) || hashSums.Count() > 0)
-                    {
-                        try
-                        {
-                            HashFunctionResult[] results = hashSums.DequeueAll();
-                            foreach (var result in results)
-                            {
-                                if(!helper.CheckContains(sqlCon, result))
-                                    helper.AddHashSum(sqlCon, result);
-                            }
-                            if (results.Length == 0) Thread.Sleep(2000);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine("ERROR MESSAGE - {0}\n{1}", ex.Message, ex.StackTrace);
-                        }
-                    }
+                    TryAddingNewResults(helper);
                 }
+                helper.CloseAndDisposeConnection();
             }));
             bdWriter.Start();
             return bdWriter;
@@ -116,9 +100,27 @@ namespace HashFiles
 
         private static String GetConnectionStringForLocalDB()
         {
+            // TODO: Исправить путь к бд - он должен быть гибким и настраиваемым
             return @"Data Source = (localdb)\MSSQLLocalDB;
                 AttachDbFilename=D:\Programming\C#\Github-portfolio\HashFiles\Database1.mdf;
                 Integrated Security=True;Connect Timeout=30;";
+        }
+
+        private static void TryAddingNewResults(MySqlServerHelper sqlHelper)
+        {
+            try
+            {
+                HashFunctionResult[] results = hashSums.DequeueAll();
+                foreach (var result in results)
+                {
+                    sqlHelper.AddHashSum(result);
+                }
+                if (results.Length == 0) Thread.Sleep(2000);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR MESSAGE - {0}\n{1}", ex.Message, ex.StackTrace);
+            }
         }
     }
 }

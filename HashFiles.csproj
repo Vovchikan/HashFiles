@@ -58,6 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataStore.cs" />
     <Compile Include="hashFunction\HashFunction.cs" />
     <Compile Include="hashFunction\HashFunctionException.cs" />
     <Compile Include="hashFunction\HashFunctionResult.cs" />

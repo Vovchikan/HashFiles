@@ -7,38 +7,32 @@ namespace HashFiles
     class MySqlServerHelper
     {
         private SqlConnectionStringBuilder builder;
+        private SqlConnection connection;
         private bool showAddingToConsole = false;
         private bool showDublicate = true;
-
-        #region Constructors
-
-        public MySqlServerHelper(string dataSource, string initialCatalog,
-            bool integratedSecurity)
-        {
-            builder = new SqlConnectionStringBuilder();
-            builder.DataSource = dataSource;
-            builder.InitialCatalog = initialCatalog;
-            builder.IntegratedSecurity = integratedSecurity;
-        }
 
         public MySqlServerHelper(string connectionString)
         {
             builder = new SqlConnectionStringBuilder(connectionString);
         }
-        #endregion
 
-        public SqlConnection NewConnection()
+        public void NewConnection()
         {
-            return new SqlConnection(builder.ConnectionString);
+            connection = new SqlConnection(builder.ConnectionString);
         }
 
-        public void TryCreateTable(SqlConnection sqlCon)
+        public void OpenConnection()
+        {
+            connection.Open();
+        }
+
+        public void TryCreateTable()
         {
             try
             {
                 using(SqlCommand command = new SqlCommand(
                     "CREATE TABLE HASHRESULTS (FileName VARCHAR(MAX), HashSum VARCHAR(MAX), " +
-                    "Errors NVARCHAR(MAX))", sqlCon))
+                    "Errors NVARCHAR(MAX))", connection))
                 {
                     command.ExecuteNonQuery();
                 }
@@ -50,19 +44,21 @@ namespace HashFiles
         }
 
         
-        public void AddHashSum(SqlConnection sqlCon, HashFunctionResult result)
+        public void AddHashSum(HashFunctionResult result)
         {
-            if(showAddingToConsole) Console.WriteLine("Добаваляем: " + result.ToString());
-            TryInsertNewData(sqlCon, result);
+            if(showAddingToConsole) 
+                Console.WriteLine("Добаваляем: " + result.ToString());
+            if(!Contains(result))
+                TryInsertNewData(result);
         }
 
-        public void TryInsertNewData(SqlConnection sqlCon, HashFunctionResult result)
+        public void TryInsertNewData(HashFunctionResult result)
         {
             try
             {
                 using (SqlCommand command = new SqlCommand(
                     "INSERT INTO HASHRESULTS (FileName, HashSum, Errors) " +
-                    "VALUES(@FileName, @HashSum, @Errors)", sqlCon))
+                    "VALUES(@FileName, @HashSum, @Errors)", connection))
                 {
                     command.Parameters.Add(new SqlParameter("@FileName", result.filePath));
                     command.Parameters.Add(new SqlParameter("@HashSum", result.hashSum));
@@ -76,13 +72,13 @@ namespace HashFiles
             }
         }
 
-        public bool CheckContains(SqlConnection sqlCon, HashFunctionResult result)
+        public bool Contains(HashFunctionResult result)
         {
             try
             {
                 using (SqlCommand command = new SqlCommand(
                     "SELECT * FROM HASHRESULTS " +
-                    "WHERE FileName = @FileName AND HashSum = @HashSum", sqlCon))
+                    "WHERE FileName = @FileName AND HashSum = @HashSum", connection))
                 {
                     command.Parameters.AddWithValue("@FileName", result.filePath);
                     command.Parameters.AddWithValue("@HashSum", result.hashSum);
@@ -100,6 +96,12 @@ namespace HashFiles
                 throw new Exception(String.Format("Ошибка в поиске данных: path = {0}, hashSum = {1}", result.filePath, result.hashSum));
             }
             return false;
+        }
+
+        public void CloseAndDisposeConnection()
+        {
+            connection?.Close();
+            connection?.Dispose();
         }
     }
 }
