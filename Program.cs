@@ -7,25 +7,23 @@ namespace HashFiles
 {
     class Program
     {
-        private static MyConcurrentQueue<string> fullFilePaths = new MyConcurrentQueue<string>();
+        private static MyConcurrentQueue<string> filePathsStash;
         private static MyConcurrentQueue<HashFunctionResult> hashSums = new MyConcurrentQueue<HashFunctionResult>();
 
         static void Main(string[] args)
         {
-            if (args.Length == 0)
-            {
-                Console.WriteLine("Запуск без парамметров.");
-                Console.Write("Введите катологи\\файлы (через пробел): ");
-                args = Console.ReadLine().Split(' ');
-            }
+            if(args.Length == 0)
+                args = InitArgs(args);
+            
+            filePathsStash = new MyConcurrentQueue<string>();
+            ThreadDirCollector threadCollector = new ThreadDirCollector(args);
+            threadCollector.CollectFilesToStash(filePathsStash);
 
-            Thread threadFilesCollection = runThreadToCollectFiles(args);
-
-            Thread[] threadsHashSumsCalculation = runThreadsToCalculateHashSums(threadFilesCollection);
+            Thread[] threadsHashSumsCalculation = runThreadsToCalculateHashSums(threadCollector.GetThread());
             
             Thread bdWriter = runThreadForWriteToBD(threadsHashSumsCalculation);
 
-            threadFilesCollection.Join();
+            threadCollector.Join();
             foreach (var thr in threadsHashSumsCalculation)
                 thr.Join();
             bdWriter.Join();
@@ -35,21 +33,12 @@ namespace HashFiles
 
         }
 
-        private static Thread runThreadToCollectFiles(params string[] paths)
+        private static string[] InitArgs(params string[] args)
         {
-            var f = new Thread(new ThreadStart(() =>
-            {
-                try
-                {
-                    fullFilePaths = RecursiveFilesCollector.GetFileQueue(paths);
-                }
-                finally
-                {
-                    Thread.Sleep(1000);
-                }
-            }));
-            f.Start();
-            return f;
+            Console.WriteLine("Запуск без парамметров.");
+            Console.Write("Введите катологи\\файлы (через пробел): ");
+            args = Console.ReadLine().Split(' ');
+            return args;
         }
 
         private static Thread[] runThreadsToCalculateHashSums(Thread threadFilesCollector, int computeThreadsCount=2)
@@ -60,11 +49,11 @@ namespace HashFiles
                 Thread compute = new Thread(new ThreadStart(() =>
                 {
                     while (threadFilesCollector.ThreadState == ThreadState.Running || 
-                    fullFilePaths.Count() > 0)
+                    filePathsStash.Count > 0)
                     {
                         try
                         {
-                            var fullFilePath = fullFilePaths.Dequeue();
+                            var fullFilePath = filePathsStash.Dequeue();
                             var result = HashFunction.ComputeMD5Checksum(fullFilePath);
                             hashSums.Enqueue(result);
                         }
@@ -89,7 +78,7 @@ namespace HashFiles
                 helper.NewConnection();
                 helper.OpenConnection();
                 helper.TryCreateTable();
-                while (computeThreads.Any(w => w.ThreadState == ThreadState.Running) || hashSums.Count() > 0)
+                while (computeThreads.Any(w => w.ThreadState == ThreadState.Running) || hashSums.Count > 0)
                 {
                     TryAddingNewResults(helper);
                 }

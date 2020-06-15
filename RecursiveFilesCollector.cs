@@ -7,39 +7,42 @@ using System.IO;
 
 namespace HashFiles
 {
-    public static class RecursiveFilesCollector
+    public class RecursiveFilesCollector
     {
         private static MyConcurrentQueue<string> filesQueue;
 
-        public static MyConcurrentQueue<string> GetFileQueue(params string[] paths)
+        public RecursiveFilesCollector(MyConcurrentQueue<string> filesQueue)
         {
-            filesQueue = new MyConcurrentQueue<string>();
-            if (paths.Length > 0)
-                enqueueAllFiles(paths);
-
-            return filesQueue;
+            RecursiveFilesCollector.filesQueue = filesQueue;
         }
 
-        private static void enqueueAllFiles(params string[] paths)
+        public void CollectFilesToQueue(params string[] paths)
+        {
+            if (paths.Length > 0)
+                enqueueAllFiles(paths);
+        }
+
+        private void enqueueAllFiles(params string[] paths)
         {
             foreach(string path in paths)
             {
-                if (File.Exists(path))
+                var fullPath = Path.GetFullPath(path);
+                if (File.Exists(fullPath))
                 {
                     // Путь указывает на файл -> Добавить файл в очередь
-                    EnqueueFile(path);
+                    EnqueueFile(fullPath);
                 }
-                if (Directory.Exists(path))
+                if (Directory.Exists(fullPath))
                 {
                     // Путь указывает на папку -> Добавить файлы/папки из неё в очередь
-                    recursivelyEnqueueDirs(path);
+                    recursivelyEnqueueDirs(fullPath);
                 }
                 else
                     throw new ArgumentException(String.Format("Wrong path {0}", path));
             }
         }
 
-        private static void recursivelyEnqueueDirs(string targetDirectory)
+        private void recursivelyEnqueueDirs(string targetDirectory)
         {
             string[] filesOfTargetDir = Directory.GetFiles(targetDirectory);
             foreach (string file in filesOfTargetDir)
@@ -50,7 +53,7 @@ namespace HashFiles
                 recursivelyEnqueueDirs(subdir);
         }
 
-        private static void EnqueueFile(string targetFile)
+        private void EnqueueFile(string targetFile)
         {
             filesQueue.Enqueue(targetFile);
         }

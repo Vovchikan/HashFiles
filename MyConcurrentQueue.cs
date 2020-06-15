@@ -31,15 +31,18 @@ namespace HashFiles
         {
             lock (this)
             {
-                return new Tuple<T, int>(this.Dequeue(), this.Count());
+                return new Tuple<T, int>(this.Dequeue(), this.Count);
             }
         }
 
-        public virtual int Count()
+        public int Count
         {
-            lock (this)
+            get
             {
-                return queue.Count;
+                lock (this)
+                {
+                    return queue.Count;
+                }
             }
         }
 
