@@ -11,9 +11,10 @@ namespace TestCollectingFiles
     public static class GlobalVars
     {
         public static readonly int tempFilesCount = 2;
-        public static readonly string TEMP_DIRRECTORY_NAME = "temp22052020";
-        public static readonly string PARRENT_DIRRERCTORY_NAME = "tests";
         public static string tempDirPath;
+
+        private static readonly string TEMP_DIRRECTORY_NAME = "temp22052020";
+        private static readonly string PARRENT_DIRRERCTORY_NAME = "tests";
 
         public static void InitTempDir()
         {

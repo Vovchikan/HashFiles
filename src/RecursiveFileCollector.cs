@@ -4,25 +4,29 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using HashFiles.src;
+using System.Collections.ObjectModel;
 
 namespace HashFiles
 {
-    public class RecursiveFilesCollector
+    public class RecursiveFileCollector : FileCollector
     {
         private static MyConcurrentQueue<string> filesQueue;
 
-        public RecursiveFilesCollector(MyConcurrentQueue<string> filesQueue)
+        public void SetStash(MyConcurrentQueue<string> stash)
         {
-            RecursiveFilesCollector.filesQueue = filesQueue;
+            filesQueue = stash;
         }
 
-        public void CollectFilesToQueue(params string[] paths)
+        public void CollectFrom(params string[] paths)
         {
             if (paths.Length > 0)
-                enqueueAllFiles(paths);
+                EnqueueAllFiles(paths);
+            else
+                throw new ArgumentException("Массив значений - пуст.");
         }
 
-        private void enqueueAllFiles(params string[] paths)
+        private void EnqueueAllFiles(params string[] paths)
         {
             foreach(string path in paths)
             {
@@ -35,27 +39,28 @@ namespace HashFiles
                 if (Directory.Exists(fullPath))
                 {
                     // Путь указывает на папку -> Добавить файлы/папки из неё в очередь
-                    recursivelyEnqueueDirs(fullPath);
+                    RecursivelyEnqueueDir(fullPath);
                 }
                 else
                     throw new ArgumentException(String.Format("Wrong path {0}", path));
             }
         }
 
-        private void recursivelyEnqueueDirs(string targetDirectory)
+        private void RecursivelyEnqueueDir(string targetDirectory)
         {
-            string[] filesOfTargetDir = Directory.GetFiles(targetDirectory);
-            foreach (string file in filesOfTargetDir)
+            string[] filesFromTargetDir = Directory.GetFiles(targetDirectory);
+            foreach (string file in filesFromTargetDir)
                 EnqueueFile(file);
 
             string[] subDirectories = Directory.GetDirectories(targetDirectory);
             foreach (string subdir in subDirectories)
-                recursivelyEnqueueDirs(subdir);
+                RecursivelyEnqueueDir(subdir);
         }
 
         private void EnqueueFile(string targetFile)
         {
             filesQueue.Enqueue(targetFile);
         }
+
     }
 }

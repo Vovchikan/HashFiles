@@ -27,14 +27,6 @@ namespace HashFiles
             }
         }
 
-        public virtual Tuple<T, int> getTupleOfDequeueAndCount()
-        {
-            lock (this)
-            {
-                return new Tuple<T, int>(this.Dequeue(), this.Count);
-            }
-        }
-
         public int Count
         {
             get

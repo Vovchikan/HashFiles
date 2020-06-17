@@ -13,10 +13,10 @@ namespace HashFiles
         static void Main(string[] args)
         {
             if(args.Length == 0)
-                args = InitArgs(args);
+                args = InitArgs();
             
             filePathsStash = new MyConcurrentQueue<string>();
-            ThreadDirCollector threadCollector = new ThreadDirCollector(args);
+            ThreadFileCollector threadCollector = new ThreadFileCollector(args);
             threadCollector.CollectFilesToStash(filePathsStash);
 
             Thread[] threadsHashSumsCalculation = runThreadsToCalculateHashSums(threadCollector.GetThread());
@@ -33,11 +33,11 @@ namespace HashFiles
 
         }
 
-        private static string[] InitArgs(params string[] args)
+        private static string[] InitArgs()
         {
             Console.WriteLine("Запуск без парамметров.");
             Console.Write("Введите катологи\\файлы (через пробел): ");
-            args = Console.ReadLine().Split(' ');
+            string[] args = Console.ReadLine().Split(' ');
             return args;
         }
 

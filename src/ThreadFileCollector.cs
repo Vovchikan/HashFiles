@@ -1,13 +1,15 @@
-﻿using System.Threading;
+﻿using HashFiles.src;
+using System.Threading;
 
 namespace HashFiles
 {
-    public class ThreadDirCollector
+    public class ThreadFileCollector
     {
-        private static Thread thread;
         public string[] paths;
+        private static Thread thread;
+        private FileCollector collector;
 
-        public ThreadDirCollector(params string[] paths)
+        public ThreadFileCollector(params string[] paths)
         {
             this.paths = paths;
         }
@@ -26,8 +28,9 @@ namespace HashFiles
         {
             thread = new Thread(() =>
             {
-                var recursiveCollector = new RecursiveFilesCollector(stash);
-                recursiveCollector.CollectFilesToQueue(paths);
+                collector = new RecursiveFileCollector();
+                collector.SetStash(stash);
+                collector.CollectFrom(paths);
             });
             thread.Start();
         }
