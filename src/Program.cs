@@ -19,13 +19,13 @@ namespace HashFiles
             ThreadFileCollector threadCollector = new ThreadFileCollector(args);
             threadCollector.CollectFilesToStash(filePathsStash);
 
-            Thread[] threadsHashSumsCalculation = runThreadsToCalculateHashSums(threadCollector.GetThread());
+            var calculator = new ThreadHashSumCalculator(2);
+            calculator.StartComputingFromTo(threadCollector, filePathsStash, hashSums);
             
-            Thread bdWriter = runThreadForWriteToBD(threadsHashSumsCalculation);
+            Thread bdWriter = runThreadForWriteToBD(calculator.GetThreads());
 
             threadCollector.Join();
-            foreach (var thr in threadsHashSumsCalculation)
-                thr.Join();
+            calculator.Join();
             bdWriter.Join();
 
             Console.WriteLine("Работа закончена.");
@@ -39,35 +39,6 @@ namespace HashFiles
             Console.Write("Введите катологи\\файлы (через пробел): ");
             string[] args = Console.ReadLine().Split(' ');
             return args;
-        }
-
-        private static Thread[] runThreadsToCalculateHashSums(Thread threadFilesCollector, int computeThreadsCount=2)
-        {
-            Thread[] th = new Thread[computeThreadsCount];
-            for (int i = 0; i < computeThreadsCount; i++)
-            {
-                Thread compute = new Thread(new ThreadStart(() =>
-                {
-                    while (threadFilesCollector.ThreadState == ThreadState.Running || 
-                    filePathsStash.Count > 0)
-                    {
-                        try
-                        {
-                            var fullFilePath = filePathsStash.Dequeue();
-                            var result = HashFunction.ComputeMD5Checksum(fullFilePath);
-                            hashSums.Enqueue(result);
-                        }
-                        catch (InvalidOperationException ex) when (ex.Message == "Empty")
-                        {
-                            //Если хранилище пустое - ждать
-                            Thread.Sleep(100);
-                        }
-                    }
-                }));
-                compute.Start();
-                th[i] = compute;
-            }
-            return th;
         }
 
         private static Thread runThreadForWriteToBD(Thread[] computeThreads)

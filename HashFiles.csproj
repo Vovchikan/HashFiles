@@ -69,6 +69,7 @@
     <Compile Include="src\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\ThreadFileCollector.cs" />
+    <Compile Include="src\ThreadHashSumCalculator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
