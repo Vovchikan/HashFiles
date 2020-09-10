@@ -14,13 +14,13 @@ namespace TestCollectingFiles
         {
             GlobalVars.InitTempDir();
             stash = new MyConcurrentQueue<string>();
-            dirCollector = new ThreadFileCollector(GlobalVars.tempDirPath);
+            dirCollector = new ThreadFileCollector(true);
         }
 
         [Test]
         public void CountTempFilesWhenTempDir()
         {
-            dirCollector.CollectFilesToStash(stash);
+            dirCollector.ExecuteToFrom(stash, GlobalVars.tempDirPath);
             dirCollector.Join();
             Assert.AreEqual(GlobalVars.tempFilesCount, stash.Count);
         }
