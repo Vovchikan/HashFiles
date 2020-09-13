@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Threading;
-using System.Linq;
+using HashFiles.src.threadWriters;
 using System.IO;
 
 namespace HashFiles
@@ -8,55 +7,55 @@ namespace HashFiles
     class Program
     {
         private static MyConcurrentQueue<string> filePathsStash;
-        private static MyConcurrentQueue<HashFunctionResult> hashSums = new MyConcurrentQueue<HashFunctionResult>();
+        private static MyConcurrentQueue<HashFunctionResult> hashSums;
 
         static void Main(string[] args)
         {
             if(args.Length == 0)
                 args = InitArgs();
-            
-            filePathsStash = new MyConcurrentQueue<string>();
-            ThreadFileCollector threadCollector = new ThreadFileCollector(args);
-            threadCollector.CollectFilesToStash(filePathsStash);
 
-            var calculator = new ThreadHashSumCalculator(2);
-            calculator.StartComputingFromTo(threadCollector, filePathsStash, hashSums);
-            
-            Thread bdWriter = runThreadForWriteToBD(calculator.GetThreads());
-
-            threadCollector.Join();
-            calculator.Join();
-            bdWriter.Join();
-
-            Console.WriteLine("Работа закончена.");
-            Console.ReadKey();
-
+            TryMainAction(args);
         }
 
         private static string[] InitArgs()
         {
-            Console.WriteLine("Запуск без парамметров.");
-            Console.Write("Введите катологи\\файлы (через пробел): ");
+            Console.WriteLine("Start program without args.");
+            Console.Write("Enter Dirs\\Files (separated by space): ");
             string[] args = Console.ReadLine().Split(' ');
             return args;
         }
 
-        private static Thread runThreadForWriteToBD(Thread[] computeThreads)
+        private static void TryMainAction(string[] args)
         {
-            Thread bdWriter = new Thread(new ThreadStart(() =>
+            filePathsStash = new MyConcurrentQueue<string>();
+            hashSums = new MyConcurrentQueue<HashFunctionResult>();
+            try
             {
-                var helper = new MySqlServerHelper(GetConnectionStringForLocalDB());
-                helper.NewConnection();
-                helper.OpenConnection();
-                helper.TryCreateTable();
-                while (computeThreads.Any(w => w.ThreadState == ThreadState.Running) || hashSums.Count > 0)
-                {
-                    TryAddingNewResults(helper);
-                }
-                helper.CloseAndDisposeConnection();
-            }));
-            bdWriter.Start();
-            return bdWriter;
+                var collector = new ThreadFileCollector(true);
+                collector.ExecuteToFrom(filePathsStash, args);
+
+                var calculator = new ThreadHashSumCalculator(2);
+                calculator.StartComputingFromTo(collector, filePathsStash, hashSums);
+
+                var writer = new ThreadWriter();
+                writer.StartFromTo(calculator, hashSums,
+                    new SqlDbConnection(GetConnectionStringForLocalDB()));
+
+                collector.Join();
+                calculator.Join();
+                writer.Join();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"ERROR MESSAGE: {e.Message}\n" +
+                    $"STACKTRACE: {e.StackTrace}");
+                throw e;
+            }
+            finally
+            {
+                Console.WriteLine("End of programm.");
+                Console.ReadKey();
+            }
         }
 
         private static String GetConnectionStringForLocalDB()
@@ -69,23 +68,6 @@ namespace HashFiles
                     throw new FileNotFoundException("Wrong file. This file is empty!");
             }
             return connectiongString;
-        }
-
-        private static void TryAddingNewResults(MySqlServerHelper sqlHelper)
-        {
-            try
-            {
-                HashFunctionResult[] results = hashSums.DequeueAll();
-                foreach (var result in results)
-                {
-                    sqlHelper.AddHashSum(result);
-                }
-                if (results.Length == 0) Thread.Sleep(2000);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("ERROR MESSAGE - {0}\n{1}", ex.Message, ex.StackTrace);
-            }
         }
     }
 }
