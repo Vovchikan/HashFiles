@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Linq;
+using System.IO;
 
 namespace HashFiles
 {
@@ -100,10 +101,14 @@ namespace HashFiles
 
         private static String GetConnectionStringForLocalDB()
         {
-            // TODO: Исправить путь к бд - он должен быть гибким и настраиваемым
-            return @"Data Source = (localdb)\MSSQLLocalDB;
-                AttachDbFilename=D:\Programming\C#\Github-portfolio\HashFiles\Database1.mdf;
-                Integrated Security=True;Connect Timeout=30;";
+            string connectiongString;
+            using (var sw = new StreamReader("./data/connectingString.txt"))
+            {
+                connectiongString = sw.ReadToEnd();
+                if (String.IsNullOrEmpty(connectiongString))
+                    throw new FileNotFoundException("Wrong file. This file is empty!");
+            }
+            return connectiongString;
         }
 
         private static void TryAddingNewResults(MySqlServerHelper sqlHelper)
