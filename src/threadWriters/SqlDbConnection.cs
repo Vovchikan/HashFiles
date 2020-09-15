@@ -26,13 +26,7 @@ namespace HashFiles.src.threadWriters
             connection.Open();
         }
 
-        public override void SendHashData(HashFunctionResult data)
-        {
-            TryCreateTable();
-            TrySendHashData(data);
-        }
-
-        private void TryCreateTable()
+        public void TryCreateTable()
         {
             if (String.IsNullOrEmpty(tableName))
                 tableName = tableDefaultName;
@@ -58,12 +52,20 @@ namespace HashFiles.src.threadWriters
             }
         }
 
+        public override void SendHashData(HashFunctionResult data)
+        {
+            Console.WriteLine("Trying to send new data:\n" +
+                    $"TABLE NAME: {tableName}\n" +
+                    $"DATA: {data}");
+            TrySendHashData(data);
+        }
+
         private void TrySendHashData(HashFunctionResult result)
         {
             try
             {
                 FindDuplicateAndThrowExc(result);
-
+                
                 using (SqlCommand command = new SqlCommand(
                     $"INSERT INTO {tableName} (FileName, HashSum, Errors) " +
                     "VALUES(@FileName, @HashSum, @Errors)", connection))

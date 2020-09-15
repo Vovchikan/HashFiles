@@ -40,7 +40,6 @@ namespace HashFiles.src.threadWriters
         {
             try
             {
-                connection.Open();
                 while (IsAllowed())
                 {
                     AddingDataFromStash();
@@ -50,6 +49,7 @@ namespace HashFiles.src.threadWriters
             {
                 Console.WriteLine(e.Message);
                 Thread.Sleep(waitingTime);
+                TryAddingDataFromStash();
             }
             catch (SqlException e)
             {
@@ -60,10 +60,6 @@ namespace HashFiles.src.threadWriters
                 Console.WriteLine($"ERROR MESSAGE: {e.Message}\n" +
                     $"STACKTRACE: {e.StackTrace}");
                 throw e;
-            }
-            finally
-            {
-                connection.Close();
             }
         }
 

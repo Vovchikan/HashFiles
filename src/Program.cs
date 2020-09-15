@@ -1,5 +1,6 @@
 ﻿using System;
 using HashFiles.src.threadWriters;
+using System.Data.SqlClient;
 using System.IO;
 
 namespace HashFiles
@@ -29,6 +30,7 @@ namespace HashFiles
         {
             filePathsStash = new MyConcurrentQueue<string>();
             hashSums = new MyConcurrentQueue<HashFunctionResult>();
+            var connection = new SqlDbConnection(GetConnectionStringForLocalDB());
             try
             {
                 var collector = new ThreadFileCollector(true);
@@ -38,21 +40,23 @@ namespace HashFiles
                 calculator.StartComputingFromTo(collector, filePathsStash, hashSums);
 
                 var writer = new ThreadWriter();
-                writer.StartFromTo(calculator, hashSums,
-                    new SqlDbConnection(GetConnectionStringForLocalDB()));
+                
+                connection.Open();
+                connection.TryCreateTable();
+                writer.StartFromTo(calculator, hashSums, connection);
 
                 collector.Join();
                 calculator.Join();
                 writer.Join();
             }
-            catch (Exception e)
+            catch (SqlException e)
             {
                 Console.WriteLine($"ERROR MESSAGE: {e.Message}\n" +
                     $"STACKTRACE: {e.StackTrace}");
-                throw e;
             }
             finally
             {
+                connection.Close();
                 Console.WriteLine("End of programm.");
                 Console.ReadKey();
             }
