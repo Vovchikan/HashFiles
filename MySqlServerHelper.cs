@@ -10,6 +10,7 @@ namespace HashFiles
     class MySqlServerHelper
     {
         private SqlConnectionStringBuilder builder;
+        private bool showAddingToConsole = false;
 
         #region Constructors
         public MySqlServerHelper()
@@ -39,15 +40,13 @@ namespace HashFiles
             return new SqlConnection(builder.ConnectionString);
         }
 
-        public void TryCreateTable(SqlConnection sqlCon, bool open=true)
+        public void TryCreateTable(SqlConnection sqlCon)
         {
-            if (!open)
-                sqlCon.Open();
             try
             {
                 using(SqlCommand command = new SqlCommand(
-                    "CREATE TABLE HASHRESULTS (FileName TEXT, HashSum TEXT, " +
-                    "Errors Text)", sqlCon))
+                    "CREATE TABLE HASHRESULTS (FileName VARCHAR(MAX), HashSum VARCHAR(MAX), " +
+                    "Errors VARCHAR(MAX))", sqlCon))
                 {
                     command.ExecuteNonQuery();
                 }
@@ -59,9 +58,8 @@ namespace HashFiles
         }
 
         public void AddHashSum(SqlConnection sqlCon, string fileName, 
-            string hashSum, string errors, bool open=true)
+            string hashSum, string errors)
         {
-            if (!open) sqlCon.Open();
             try
             {
                 using (SqlCommand command = new SqlCommand(
@@ -82,6 +80,7 @@ namespace HashFiles
         
         public void AddHashSum(SqlConnection sqlCon, params string[] parametrs)
         {
+            if(showAddingToConsole) Console.WriteLine("Добаваляем: " + string.Join(" ", parametrs));
             if(parametrs.Length == 3)
             {
                 string fileName = parametrs[0];
@@ -89,6 +88,37 @@ namespace HashFiles
                 string errors = parametrs[2];
                 this.AddHashSum(sqlCon, fileName, hashSum, errors);
             }
+        }
+
+        public bool CheckContains(SqlConnection sqlCon, params string[] parametrs)
+        {
+            if (parametrs.Length == 3)
+            {
+                try
+                {
+                    string fileName = parametrs[0];
+                    string hashSum = parametrs[1];
+                    using (SqlCommand command = new SqlCommand(
+                        "SELECT * FROM HASHRESULTS " +
+                        "WHERE FileName = @FileName AND HashSum = @HashSum", sqlCon))
+                    {
+                        command.Parameters.AddWithValue("@FileName", fileName);
+                        command.Parameters.AddWithValue("@HashSum", hashSum);
+                        using (SqlDataReader reader = command.ExecuteReader())
+                            while (reader.Read())
+                            {
+                                reader.Close();
+                                return true;
+                            }
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("filename = {0}, hashSum = {1}", parametrs[0], parametrs[1]);
+                    throw ;
+                }
+            }
+            return false;
         }
     }
 }
