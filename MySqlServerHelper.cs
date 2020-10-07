@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SqlClient;
 
 namespace HashFiles
@@ -11,6 +7,7 @@ namespace HashFiles
     {
         private SqlConnectionStringBuilder builder;
         private bool showAddingToConsole = false;
+        private bool showDublicate = true;
 
         #region Constructors
         public MySqlServerHelper()
@@ -22,8 +19,9 @@ namespace HashFiles
         }
 
         public MySqlServerHelper(string dataSource, string initialCatalog,
-            bool integratedSecurity) : this()
+            bool integratedSecurity)
         {
+            builder = new SqlConnectionStringBuilder();
             builder.DataSource = dataSource;
             builder.InitialCatalog = initialCatalog;
             builder.IntegratedSecurity = integratedSecurity;
@@ -108,6 +106,7 @@ namespace HashFiles
                             while (reader.Read())
                             {
                                 reader.Close();
+                                if(showDublicate) Console.WriteLine("Дубликат: {0} {1}", fileName, hashSum);
                                 return true;
                             }
                     }
