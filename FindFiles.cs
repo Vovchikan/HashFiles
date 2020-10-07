@@ -67,6 +67,25 @@ namespace HashFiles
                 files.Enqueue(targetFile);
             }
         }
+
+        /// <summary>
+        /// Возвращает имя файла из хранилища и размер хранилища
+        /// </summary>
+        /// <returns></returns>
+        public static Tuple<string, int> TakeFromStorage()
+        {
+            try
+            {
+                lock (FindFiles.files)
+                {
+                    return new Tuple<string, int>(files.Dequeue(), files.Count);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+        }
         #endregion
     }
 }
