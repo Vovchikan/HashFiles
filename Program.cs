@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Threading;
 using System.Data.SqlClient;
 using System.Linq;
@@ -77,7 +75,7 @@ namespace HashFiles
             finally
             {
                 errors = string.IsNullOrEmpty(errors) ? "NoErrors." : errors;
-                hashSum = string.IsNullOrEmpty(errors) ? "NoHashsum" : hashSum; // проверить!
+                if (hashSum == "") hashSum = "NoHashSum"; 
                 res = string.Join(sep, fileName, hashSum, errors);
             }
             return res;
@@ -107,7 +105,7 @@ namespace HashFiles
                         catch (InvalidOperationException ex) when (ex.Message == "Empty")
                         {
                             //Если хранилище пустое - ждать
-                            Task.Delay(100);
+                            Thread.Sleep(100);
                         }
                     }
                 }));
@@ -139,8 +137,9 @@ namespace HashFiles
                                 if(!helper.CheckContains(sqlCon, parametrs))
                                     helper.AddHashSum(sqlCon, parametrs);
                             }
+                            if (res.Length == 0) Thread.Sleep(2000);
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             Console.WriteLine("Error with message - {0}\n{1}", ex.Message, ex.StackTrace);
                         }
