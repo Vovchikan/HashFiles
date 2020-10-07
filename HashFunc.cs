@@ -8,6 +8,18 @@ namespace HashFiles
     {
         public static string ComputeMD5Checksum(string path)
         {
+            try
+            {
+                return ComputeMD5Checksum2(path);
+            }
+            catch (Exception e)
+            {
+                throw new HashFunc.HashFuncException(e.Message);
+            }
+        }
+
+        private static string ComputeMD5Checksum1(string path)
+        {
             using (FileStream fs = System.IO.File.OpenRead(path))
             {
                 MD5 md5 = new MD5CryptoServiceProvider();
@@ -24,15 +36,22 @@ namespace HashFiles
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static string ComputeMD5Checksum2(string path)
+        private static string ComputeMD5Checksum2(string path)
         {
             using (FileStream fs = System.IO.File.OpenRead(path))
-            using (MD5 md5 = new MD5CryptoServiceProvider())
-            {
-                byte[] checkSum = md5.ComputeHash(fs);
-                string result = BitConverter.ToString(checkSum).Replace("-", String.Empty);
-                return result;
-            }
+                using (MD5 md5 = new MD5CryptoServiceProvider())
+                {
+                    byte[] checkSum = md5.ComputeHash(fs);
+                    string result = BitConverter.ToString(checkSum).Replace("-", String.Empty);
+                    return result;
+                }
+        }
+
+        public class HashFuncException : Exception
+        {
+            public HashFuncException(string message)
+                : base(message)
+            { }
         }
     }
 }
