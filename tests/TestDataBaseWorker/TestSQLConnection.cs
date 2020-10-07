@@ -24,7 +24,7 @@ namespace TestDataBaseWorker
 
         [Test]
         public void FindDatabase1AtLocalSqlServer(
-            [Values(defaultConnectionString, relativeConnectionString)] String connectionString)
+            [Values(relativeConnectionString)] String connectionString)
         {
             using (var sc = new SqlConnection(connectionString))
             {
@@ -33,10 +33,6 @@ namespace TestDataBaseWorker
                 Assert.AreEqual(sc.State, System.Data.ConnectionState.Open);
             }
         }
-
-        private const String defaultConnectionString = @"Data Source = (localdb)\MSSQLLocalDB;
-                AttachDbFilename=D:\Programming\C#\Github-portfolio\HashFiles\Database1.mdf;
-                Integrated Security=True;Connect Timeout=30;database=Database1";
 
         private const String relativeConnectionString = @"Data Source = (localdb)\MSSQLLocalDB;
                 AttachDbFilename=|DataDirectory|\Database1.mdf;
