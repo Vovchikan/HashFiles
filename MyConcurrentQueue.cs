@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace HashFiles
 {
-    public class MyTaskQueue<T>
+    public class MyConcurrentQueue<T>
     {
         private Queue<T> queue = new Queue<T>();
-        public bool ShowConsoleEnqueue = false;
 
         public virtual void Enqueue(T input)
         {
@@ -17,7 +16,6 @@ namespace HashFiles
             {
                 queue.Enqueue(input);
             }
-            if(ShowConsoleEnqueue) Console.WriteLine(input);
         }
 
         public virtual T Dequeue()
@@ -29,7 +27,7 @@ namespace HashFiles
             }
         }
 
-        public virtual Tuple<T, int> DequeueAndCount()
+        public virtual Tuple<T, int> getTupleOfDequeueAndCount()
         {
             lock (this)
             {
@@ -56,3 +54,5 @@ namespace HashFiles
         }
     }
 }
+
+

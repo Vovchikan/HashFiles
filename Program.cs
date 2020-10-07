@@ -7,7 +7,7 @@ namespace HashFiles
 {
     class Program
     {
-        private static MyTaskQueue<string> hashSums = new MyTaskQueue<string>();
+        private static MyConcurrentQueue<string> hashSums = new MyConcurrentQueue<string>();
         private delegate string MyHashFunc(string fileName);
         private static string sep = "_";
 

@@ -9,7 +9,7 @@ namespace HashFiles
 {
     static class FindFiles
     {
-        public static MyTaskQueue<string> files = new MyTaskQueue<string>();
+        public static MyConcurrentQueue<string> files = new MyConcurrentQueue<string>();
 
         public static void GetFiles(params string[] args)
         {
@@ -70,7 +70,7 @@ namespace HashFiles
             {
                 lock (FindFiles.files)
                 {
-                    return files.DequeueAndCount();
+                    return files.getTupleOfDequeueAndCount();
                 }
             }
             catch (InvalidOperationException)
