@@ -21,7 +21,7 @@ namespace HashFiles
         {
             if(args.Length == 0)
             {
-                // Do smth
+                Console.WriteLine("Где искать???!!");
             }
 
             foreach(string path in args)
@@ -39,6 +39,7 @@ namespace HashFiles
                 else
                 {
                     // Путь не указывает на файл или на директорию -> Вывести ошибку?
+                    Console.WriteLine("{0} - неверно указан путь!", path);
                 }
             }
         }
