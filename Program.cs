@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Data.SqlClient;
 
 namespace HashFiles
 {
@@ -11,6 +10,7 @@ namespace HashFiles
     {
         private static MyTaskQueue<string> hashSums = new MyTaskQueue<string>();
         private delegate string MyHashFunc(string fileName);
+        private static string sep = "_";
 
         static void Main(string[] args)
         {
@@ -41,7 +41,8 @@ namespace HashFiles
                         try
                         {
                             var fileName = FindFiles.files.Dequeue();
-                            computeHashSums(HashFunc.ComputeMD5Checksum, fileName);
+                            var res = computeHashSums(HashFunc.ComputeMD5Checksum, fileName, sep);
+                            addHashSum(res);
                         }
                         catch (InvalidOperationException ex) when (ex.Message == "Empty")
                         {
@@ -75,9 +76,15 @@ namespace HashFiles
 
         }
 
-        private static void computeHashSums(MyHashFunc hf, string fileName)
+        #region work with HashFunc class
+        /// <summary>
+        /// Использвует хэш-функцию hf для подсчёта хэш-суммы
+        /// файла fileName. Добавляет инфу об ошибках в результат.
+        /// Возвращает строку - string.Join(sep, fileName, hashSum, errors).
+        /// </summary>
+        private static string computeHashSums(MyHashFunc hf, string fileName, string sep=" ")
         {
-            string  hashSum ="", errors="";
+            string  hashSum ="", errors="", res;
             try
             {
                 hashSum = hf(fileName);
@@ -90,15 +97,32 @@ namespace HashFiles
             finally
             {
                 errors = string.IsNullOrEmpty(errors) ? "No errors." : errors;
-                hashSum = string.IsNullOrEmpty(errors) ? "No hashsum" : hashSum; // Не работает, проверить!
-                addHashSum(hashSum, fileName, errors);
+                hashSum = string.IsNullOrEmpty(errors) ? "No hashsum" : hashSum; // проверить!
+                res = string.Join(sep, fileName, hashSum, errors);
             }
+            return res;
         }
 
-        private static void addHashSum(string hashSum, string fileName, string errors="", string sep=" ")
+        private static void addHashSum(string res)
         {
-            var res = string.Join(sep, fileName, hashSum, errors, Thread.CurrentThread.ManagedThreadId);
             hashSums.Enqueue(res);
+        }
+        #endregion
+
+        private static void writeToBD()
+        {
+            var helper = new MySqlServerHelper();
+            using (SqlConnection sqlCon = helper.NewConnection())
+            {
+                sqlCon.Open();
+                helper.TryCreateTable(sqlCon);
+                while (hashSums.Count() > 0)
+                {
+                    var res = hashSums.Dequeue().Split(sep.ToCharArray(),
+                        StringSplitOptions.RemoveEmptyEntries);
+                    helper.AddHashSum(sqlCon, res);
+                }
+            }
         }
 
     }
