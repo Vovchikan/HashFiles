@@ -9,6 +9,7 @@ namespace HashFiles
     public class MyTaskQueue<T>
     {
         private Queue<T> queue = new Queue<T>();
+        public bool ShowConsoleEnqueue = false;
 
         public virtual void Enqueue(T input)
         {
@@ -16,7 +17,7 @@ namespace HashFiles
             {
                 queue.Enqueue(input);
             }
-            Console.WriteLine(input);
+            if(ShowConsoleEnqueue) Console.WriteLine(input);
         }
 
         public virtual T Dequeue()
