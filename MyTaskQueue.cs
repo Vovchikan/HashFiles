@@ -44,5 +44,15 @@ namespace HashFiles
                 return queue.Count;
             }
         }
+
+        public virtual T[] DequeueAll()
+        {
+            lock (this)
+            {
+                var res = queue.ToArray();
+                queue.Clear();
+                return res;
+            }
+        }
     }
 }
