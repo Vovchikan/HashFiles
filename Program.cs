@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace HashFiles
 {
@@ -17,6 +18,8 @@ namespace HashFiles
             if (args.Length == 0)
             {
                 Console.WriteLine("Запуск без парамметров.");
+                Console.Write("Введите катологи\\файлы (через пробел): ");
+                args = Console.ReadLine().Split(' ');
             }
 
             var f = runThreadForFindFiles(args);
@@ -24,12 +27,7 @@ namespace HashFiles
             // Рассчитать хэш-суммы для файлов
             var thrs = runThreadsForHF(f);
             // Добавить файлы в бд
-            Thread bdWriter = new Thread(new ThreadStart(() =>
-            {
-                // Бд
-            }));
-            bdWriter.Start();
-
+            var bdWriter = runThreadForWriteToBD(thrs);
 
             f.Join();
             foreach (var thr in thrs)
@@ -78,8 +76,8 @@ namespace HashFiles
             }
             finally
             {
-                errors = string.IsNullOrEmpty(errors) ? "No errors." : errors;
-                hashSum = string.IsNullOrEmpty(errors) ? "No hashsum" : hashSum; // проверить!
+                errors = string.IsNullOrEmpty(errors) ? "NoErrors." : errors;
+                hashSum = string.IsNullOrEmpty(errors) ? "NoHashsum" : hashSum; // проверить!
                 res = string.Join(sep, fileName, hashSum, errors);
             }
             return res;
@@ -120,20 +118,32 @@ namespace HashFiles
         }
         #endregion
 
-        private static Thread runThreadForWriteToBD() // !!!!!!!!!!!!!!!!!!!!!!!!
+        private static Thread runThreadForWriteToBD(Thread[] computeThreads)
         {
             Thread bdWriter = new Thread(new ThreadStart(() =>
-            { 
+            {
                 var helper = new MySqlServerHelper();
                 using (SqlConnection sqlCon = helper.NewConnection())
                 {
                     sqlCon.Open();
                     helper.TryCreateTable(sqlCon);
-                    while (hashSums.Count() > 0)
+                    while (computeThreads.Any(w => w.ThreadState == ThreadState.Running) || hashSums.Count() > 0)
                     {
-                        var res = hashSums.Dequeue().Split(sep.ToCharArray(),
-                            StringSplitOptions.RemoveEmptyEntries);
-                        helper.AddHashSum(sqlCon, res);
+                        try
+                        {
+                            string[] res = hashSums.DequeueAll();
+                            foreach (string stringParametr in res)
+                            {
+                                var parametrs = stringParametr.Split(sep.ToCharArray(),
+                                    StringSplitOptions.RemoveEmptyEntries);
+                                if(!helper.CheckContains(sqlCon, parametrs))
+                                    helper.AddHashSum(sqlCon, parametrs);
+                            }
+                        }
+                        catch(Exception ex)
+                        {
+                            Console.WriteLine("Error with message - {0}\n{1}", ex.Message, ex.StackTrace);
+                        }
                     }
                 }
             }));
