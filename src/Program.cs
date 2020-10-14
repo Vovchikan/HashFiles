@@ -9,6 +9,8 @@ namespace HashFiles
     {
         private static MyConcurrentQueue<string> filePathsStash;
         private static MyConcurrentQueue<HashFunctionResult> hashSums;
+        private static string bdconfigFileName = "connectingString.txt";
+        private static string dataFolderName = "data";
 
         static void Main(string[] args)
         {
@@ -65,13 +67,28 @@ namespace HashFiles
         private static String GetConnectionStringForLocalDB()
         {
             string connectiongString;
-            using (var sw = new StreamReader("./data/connectingString.txt"))
+            try
             {
-                connectiongString = sw.ReadToEnd();
-                if (String.IsNullOrEmpty(connectiongString))
-                    throw new FileNotFoundException("Wrong file. This file is empty!");
+                using (var sw = new StreamReader("./data/connectingString.txt"))
+                {
+                    connectiongString = sw.ReadToEnd();
+                    if (String.IsNullOrEmpty(connectiongString))
+                        throw new FileNotFoundException("Wrong file. This file is empty!");
+                }
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine($"Trying to create folder - {dataFolderName}");
+                Directory.CreateDirectory($"./{dataFolderName}");
+                File.AppendAllText($"./{dataFolderName}/{bdconfigFileName}", relativeConnectionString);
+                connectiongString = GetConnectionStringForLocalDB();
             }
             return connectiongString;
         }
+
+        private const String relativeConnectionString = @"Data Source = (localdb)\MSSQLLocalDB;
+                AttachDbFilename=|DataDirectory|\Database1.mdf;
+                Integrated Security=True;Connect Timeout=30;";
     }
 }
