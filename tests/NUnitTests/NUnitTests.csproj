@@ -9,8 +9,8 @@
     <ProjectGuid>{735B309C-C955-4F7B-883C-31F9FBDD53E8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestRecursiveFilesCollector</RootNamespace>
-    <AssemblyName>TestRecursiveFilesCollector</AssemblyName>
+    <RootNamespace>NUnitTests</RootNamespace>
+    <AssemblyName>NUnitTests</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalVars.cs" />
+    <Compile Include="TestSQLConnection.cs" />
     <Compile Include="TestThreadFileCollector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
