@@ -1,5 +1,6 @@
 ﻿using HashFiles;
 using NUnit.Framework;
+using System.Security.Policy;
 
 namespace TestCollectingFiles
 {
@@ -7,22 +8,35 @@ namespace TestCollectingFiles
     public class TestThreadFileCollector
     {
         private static MyConcurrentQueue<string> stash;
-        private static ThreadFileCollector dirCollector;
 
-        [SetUp]
+        [OneTimeSetUp]
         public void InitializationStaticFields()
         {
             GlobalVars.InitTempDir();
+        }
+
+        [SetUp]
+        public void InitializationStash()
+        {
             stash = new MyConcurrentQueue<string>();
-            dirCollector = new ThreadFileCollector(true);
         }
 
         [Test]
-        public void CountTempFilesWhenTempDir()
+        public void CountTempFilesRecursive()
         {
-            dirCollector.ExecuteToFrom(stash, GlobalVars.tempDirPath);
-            dirCollector.Join();
+            var collector = new ThreadFileCollector(true);
+            collector.ExecuteToFrom(stash, GlobalVars.tempDirPath);
+            collector.Join();
             Assert.AreEqual(GlobalVars.tempFilesCount, stash.Count);
+        }
+
+        [Test]
+        public void CountTempFilesNotRecursive()
+        {
+            var collector = new ThreadFileCollector(false);
+            collector.ExecuteToFrom(stash, GlobalVars.tempDirPath);
+            collector.Join();
+            Assert.AreEqual(GlobalVars.onlyParentTempFilesCount, stash.Count);
         }
     }
 }

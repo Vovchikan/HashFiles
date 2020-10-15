@@ -36,17 +36,23 @@ namespace HashFiles
             this.stash = stash;
             thread = new Thread(() =>
             {
-                foreach(var path in paths)
-                    TryCollectFrom(path);
+                foreach (var path in paths)
+                {
+                    var fullPath = Path.GetFullPath(path);
+                    if (File.Exists(fullPath))
+                        EnqueueFile(fullPath);
+                    else
+                        TryCollectFromDirectory(path);
+                }
             });
             thread.Start();
         }
 
-        private void TryCollectFrom(string path)
+        private void TryCollectFromDirectory(string fullDirectoryPath)
         {
             try
             {
-                CollectFrom(path);
+                CollectFromDirectory(fullDirectoryPath);
             }
             catch (ArgumentException e)
             {
@@ -55,22 +61,23 @@ namespace HashFiles
             }
         }
 
-        private void CollectFrom(string path)
+        private void CollectFromDirectory(string fullDirectoryPath)
         {
-            var fullPath = Path.GetFullPath(path);
-            if (File.Exists(fullPath))
+            if (Directory.Exists(fullDirectoryPath))
             {
-                // Путь указывает на файл -> Добавить файл в очередь
-                EnqueueFile(fullPath);
-            }
-            if (Directory.Exists(fullPath))
-            {
-                // Путь указывает на папку -> Добавить файлы/папки из неё в очередь
-                if(recursive)
-                    RecursivelyEnqueueDir(fullPath);
+                string[] files = Directory.GetFiles(fullDirectoryPath);
+                foreach (string file in files)
+                    EnqueueFile(file);
+
+                if (recursive)
+                {
+                    string[] subDirectories = Directory.GetDirectories(fullDirectoryPath);
+                    foreach(string subDir in subDirectories)
+                        RecursivelyEnqueueDir(subDir);
+                }
             }
             else
-                throw new ArgumentException($"Wrong path {path}");
+                throw new ArgumentException($"Wrong path {fullDirectoryPath}");
         }
 
         private void RecursivelyEnqueueDir(string targetDirectory)
@@ -80,8 +87,8 @@ namespace HashFiles
                 EnqueueFile(file);
 
             string[] subDirectories = Directory.GetDirectories(targetDirectory);
-            foreach (string subdir in subDirectories)
-                RecursivelyEnqueueDir(subdir);
+            foreach (string subDir in subDirectories)
+                RecursivelyEnqueueDir(subDir);
         }
 
         private void EnqueueFile(string targetFile)
