@@ -65,9 +65,8 @@ namespace HashFiles
                 var result = HashFunction.ComputeMD5Checksum(fullFilePath);
                 results.Enqueue(result);
             }
-            catch (EmptyConcurrentQueueException ex)
+            catch (EmptyConcurrentQueueException)
             {
-                Console.WriteLine(ex.Message);
                 Thread.Sleep(waitTime);
             }
         }
