@@ -67,6 +67,7 @@ namespace HashFiles
             }
             catch (EmptyConcurrentQueueException)
             {
+                // todo (threadWriter) реализовать ожидание через EventWaitHandle
                 Thread.Sleep(waitTime);
             }
         }

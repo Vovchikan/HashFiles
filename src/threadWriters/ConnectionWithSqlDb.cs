@@ -1,18 +1,57 @@
-﻿using System;
+﻿using HashFiles.src.options;
+using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.IO;
 
 namespace HashFiles.src.threadWriters
 {
     public class ConnectionWithSqlDb : ConnectionWith
     {
-        private readonly SqlConnection connection;
         private readonly string tableDefaultName = "HASHRESULTS";
+        private SqlConnection connection;
         private string tableName = "";
+        private OptionsForSqlDb options;
 
         public ConnectionWithSqlDb(string connectionString)
         {
             connection = new SqlConnection(connectionString);
+        }
+
+        public ConnectionWithSqlDb(OptionsForSqlDb options)
+        {
+            this.options = options;
+        }
+
+        private string GetConnectionStringFromOptions()
+        {
+            string connectiongString = null;
+            FileInfo fi = new FileInfo(options.ConfigeFilePath);
+            try
+            {
+                if (File.Exists(fi.FullName))
+                    using (var sw = new StreamReader(fi.FullName))
+                    {
+                        connectiongString = sw.ReadToEnd();
+                        if (String.IsNullOrEmpty(connectiongString))
+                            throw new ArgumentException($"Wrong file!\n" +
+                                $"{fi.Name}, is empty!");
+                    }
+                else
+                {
+                    throw new FileNotFoundException($"File {fi.FullName} not found.");
+                }
+            }
+            catch (ArgumentException e)
+            {
+                Console.WriteLine("\n"+e.Message+"\n");
+            }
+            catch (FileNotFoundException e)
+            {
+                Console.WriteLine("\n"+e.Message);
+                Console.WriteLine("Use help for more info.\n");
+            }
+            return connectiongString;
         }
 
         public override void Close()
@@ -21,9 +60,12 @@ namespace HashFiles.src.threadWriters
             connection?.Dispose();
         }
 
-        public override void Open()
+        public override void PrepareForWriting()
         {
+            string connectionString = GetConnectionStringFromOptions();
+            this.connection = new SqlConnection(connectionString);
             connection.Open();
+            TryCreateTable();
         }
 
         public void TryCreateTable()
@@ -36,7 +78,6 @@ namespace HashFiles.src.threadWriters
                     $"CREATE TABLE {tableName} (FileName VARCHAR(MAX), HashSum VARCHAR(MAX), " +
                     "Errors NVARCHAR(MAX))", connection))
                 {
-                    //command.Parameters.Add(new SqlParameter("@Name", tableName));
                     command.ExecuteNonQuery();
                 }
             }
@@ -54,9 +95,11 @@ namespace HashFiles.src.threadWriters
 
         public override void SendHashData(HashFunctionResult data)
         {
-            Console.WriteLine("Trying to send new data:\n" +
-                    $"TABLE NAME: {tableName}\n" +
-                    $"DATA: {data}");
+            if (options.Verbose)
+            {
+                Console.WriteLine($"Trying to send new data to {tableName.ToUpper()}:\n" +
+                        $"DATA: {data}");
+            }
             TrySendHashData(data);
         }
 
@@ -79,13 +122,15 @@ namespace HashFiles.src.threadWriters
             }
             catch(DuplicateDataException e)
             {
-                Console.WriteLine(e.Message);
+                if(options.Verbose)
+                    Console.WriteLine(e.Message);
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to send new data:\n" +
-                    $"TABLE NAME: {tableName}\n"+
-                    $"DATA: {result}");
+                if(options.Verbose)
+                    Console.WriteLine("Failed to send new data:\n" +
+                        $"TABLE NAME: {tableName}\n"+
+                        $"DATA: {result}");
                 throw e;
             }
         }
