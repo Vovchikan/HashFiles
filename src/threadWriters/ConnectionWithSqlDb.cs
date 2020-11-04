@@ -4,13 +4,13 @@ using System.Data.SqlClient;
 
 namespace HashFiles.src.threadWriters
 {
-    public class SqlDbConnection : WriterConnection
+    public class ConnectionWithSqlDb : WriterConnection
     {
         private readonly SqlConnection connection;
         private readonly string tableDefaultName = "HASHRESULTS";
         private string tableName = "";
 
-        public SqlDbConnection(string connectionString)
+        public ConnectionWithSqlDb(string connectionString)
         {
             connection = new SqlConnection(connectionString);
         }

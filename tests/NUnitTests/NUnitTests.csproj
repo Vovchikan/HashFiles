@@ -49,7 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalVars.cs" />
-    <Compile Include="TestSQLConnection.cs" />
+    <Compile Include="TestConnectionWithSqlDb.cs" />
     <Compile Include="TestThreadFileCollector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

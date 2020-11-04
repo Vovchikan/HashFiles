@@ -32,7 +32,7 @@ namespace HashFiles
         {
             filePathsStash = new MyConcurrentQueue<string>();
             hashSums = new MyConcurrentQueue<HashFunctionResult>();
-            var connection = new SqlDbConnection(GetConnectionStringForLocalDB());
+            var connection = new ConnectionWithSqlDb(GetConnectionStringForLocalDB());
             try
             {
                 var collector = new ThreadFileCollector(true);
