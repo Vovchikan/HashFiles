@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 
 namespace HashFiles.src.threadWriters
 {
-    public class ConnectionWithSqlDb : WriterConnection
+    public class ConnectionWithSqlDb : ConnectionWith
     {
         private readonly SqlConnection connection;
         private readonly string tableDefaultName = "HASHRESULTS";

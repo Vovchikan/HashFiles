@@ -9,7 +9,7 @@ namespace HashFiles.src.threadWriters
     {
         private MyConcurrentQueue<HashFunctionResult> stash;
         private ThreadHashSumCalculator calc;
-        private WriterConnection connection;
+        private ConnectionWith connection;
         private Thread thread;
         private readonly int waitingTime = 200;
 
@@ -18,7 +18,7 @@ namespace HashFiles.src.threadWriters
             thread.Join();
         }
         public void StartFromTo(ThreadHashSumCalculator calc,
-            MyConcurrentQueue<HashFunctionResult> stash, WriterConnection wrCon)
+            MyConcurrentQueue<HashFunctionResult> stash, ConnectionWith wrCon)
         {
             this.stash = stash;
             this.calc = calc;

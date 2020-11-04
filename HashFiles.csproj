@@ -68,7 +68,7 @@
     <Compile Include="src\ThreadHashSumCalculator.cs" />
     <Compile Include="src\threadWriters\DuplicateDataException.cs" />
     <Compile Include="src\threadWriters\ThreadWriter.cs" />
-    <Compile Include="src\threadWriters\WriterConnection.cs" />
+    <Compile Include="src\threadWriters\ConnectionWith.cs" />
     <Compile Include="src\threadWriters\ConnectionWithSqlDb.cs" />
   </ItemGroup>
   <ItemGroup>
