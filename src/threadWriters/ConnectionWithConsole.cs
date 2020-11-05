@@ -24,8 +24,8 @@ namespace HashFiles.src.threadWriters
 
         public override void SendHashData(HashFunctionResult res)
         {
-            Console.WriteLine(res);
-            // todo не работает консольный коннектор
+            if(!conOpt.Hide)
+                Console.WriteLine(res);
         }
     }
 }

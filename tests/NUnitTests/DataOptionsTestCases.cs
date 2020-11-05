@@ -12,6 +12,7 @@ namespace NUnitTests
         private static IEnumerable<string> paths = new string[] { "./" };
         private static bool defRecursive = false;
         private static bool verbose = false;
+        private static bool hideMode = false;
 
         public static IEnumerable TestCasesConnectionFabrica
         {
@@ -31,7 +32,7 @@ namespace NUnitTests
 
         private static OptionsForConsole CreateConsoleOptions()
         {
-            return new OptionsForConsole(paths, defRecursive, Options.defaultThreadsCount, verbose);
+            return new OptionsForConsole(hideMode, paths, defRecursive, Options.defaultThreadsCount, verbose);
         }
 
         private static OptionsForFile CreateFileOptions()
