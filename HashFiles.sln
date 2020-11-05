@@ -9,14 +9,24 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NUnitTests", "tests\NUnitTe
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Console Music|Any CPU = Debug Console Music|Any CPU
+		Debug Console Verbose Music|Any CPU = Debug Console Verbose Music|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Debug Console Music|Any CPU.ActiveCfg = Debug Console Music|Any CPU
+		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Debug Console Music|Any CPU.Build.0 = Debug Console Music|Any CPU
+		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Debug Console Verbose Music|Any CPU.ActiveCfg = Debug Console Verbose|Any CPU
+		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Debug Console Verbose Music|Any CPU.Build.0 = Debug Console Verbose|Any CPU
 		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E9848C3-FC24-4869-829B-D0A53D861C3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Debug Console Music|Any CPU.ActiveCfg = Debug Console Music|Any CPU
+		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Debug Console Music|Any CPU.Build.0 = Debug Console Music|Any CPU
+		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Debug Console Verbose Music|Any CPU.ActiveCfg = Debug Console Verbose|Any CPU
+		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Debug Console Verbose Music|Any CPU.Build.0 = Debug Console Verbose|Any CPU
 		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{735B309C-C955-4F7B-883C-31F9FBDD53E8}.Release|Any CPU.ActiveCfg = Release|Any CPU

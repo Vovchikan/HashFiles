@@ -45,15 +45,16 @@ namespace HashFiles.src.threadWriters
                     AddingDataFromStash();
                 }
             }
-            catch(EmptyConcurrentQueueException e)
+            catch(EmptyConcurrentQueueException)
             {
-                Console.WriteLine(e.Message);
+                // todo (threadWriter) реализовать ожидание через EventWaitHandle
                 Thread.Sleep(waitingTime);
                 TryAddingDataFromStash();
             }
             catch (SqlException e)
             {
-                Console.WriteLine($"ERROR MESSAGE: {e.Message}");
+                Console.WriteLine($"ERROR MESSAGE: {e.Message}"); 
+                // todo writer не должен перехватывать sqlexception, нужно придумать своё общее исключение
             }
             catch (Exception e)
             {
