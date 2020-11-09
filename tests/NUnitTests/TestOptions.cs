@@ -36,7 +36,7 @@ namespace NUnitTests
         }
 
         [Test]
-        public void TestPathsOption(
+        public void TestPathsOption( // todo добавить проверку на пути с пробелами
             [Values("-p", "--paths")] string optionPath)
         {
             string[] args = $"{optionPath} {tempPaths}".Split();

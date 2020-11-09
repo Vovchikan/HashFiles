@@ -54,6 +54,7 @@ namespace HashFiles.src.threadWriters
                     hasWork = false;
                     stash.Ready.Set();
                 }, Thread.CurrentThread.ManagedThreadId.ToString(), 5000, Timeout.Infinite);
+                // todo исправить задержку, сделать её зависимой не от времени, а от общего окончания других потоков
                 stash.Ready.WaitOne();
                 tmr.Dispose();
             }
