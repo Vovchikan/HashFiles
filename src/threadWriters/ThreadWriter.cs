@@ -8,52 +8,58 @@ namespace HashFiles.src.threadWriters
     public class ThreadWriter
     {
         private MyConcurrentQueue<HashFunctionResult> stash;
-        private ThreadHashSumCalculator calc;
         private ConnectionWith connection;
         private Thread thread;
-        private readonly int waitingTime = 200;
+        private bool verbose;
+        private bool hasWork = true;
+
+        public ThreadWriter() { }
+
+        public ThreadWriter(bool verbose)
+        {
+            this.verbose = verbose;
+        }
 
         public void Join()
         {
             thread.Join();
         }
-        public void StartFromTo(ThreadHashSumCalculator calc,
-            MyConcurrentQueue<HashFunctionResult> stash, ConnectionWith wrCon)
+        public void StartFromTo(MyConcurrentQueue<HashFunctionResult> stash, 
+            ConnectionWith wrCon)
         {
             this.stash = stash;
-            this.calc = calc;
             this.connection = wrCon;
             thread = new Thread(new ThreadStart(() =>
             {
-                TryAddingDataFromStash();
+                while (hasWork)
+                {
+                    TryAddingDataFromStash();
+                }
+                if (verbose)
+                    Console.WriteLine($"Writer-Thrd<{Thread.CurrentThread.ManagedThreadId}> FINISHED his work.");
             }));
             thread.Start();
-        }
-
-        private bool IsAllowed()
-        {
-            return calc.GetThreads().Any(w => w.ThreadState == ThreadState.Running)
-                || stash.Count > 0;
         }
 
         private void TryAddingDataFromStash()
         {
             try
             {
-                while (IsAllowed())
-                {
-                    AddingDataFromStash();
-                }
+                AddingDataFromStash();
             }
-            catch(EmptyConcurrentQueueException)
+            catch (EmptyConcurrentQueueException)
             {
-                // todo (threadWriter) реализовать ожидание через EventWaitHandle
-                Thread.Sleep(waitingTime);
-                TryAddingDataFromStash();
+                Timer tmr = new Timer(id =>
+                {
+                    hasWork = false;
+                    stash.Ready.Set();
+                }, Thread.CurrentThread.ManagedThreadId.ToString(), 5000, Timeout.Infinite);
+                stash.Ready.WaitOne();
+                tmr.Dispose();
             }
             catch (SqlException e)
             {
-                Console.WriteLine($"ERROR MESSAGE: {e.Message}"); 
+                Console.WriteLine($"ERROR MESSAGE: {e.Message}");
                 // todo writer не должен перехватывать sqlexception, нужно придумать своё общее исключение
             }
             catch (Exception e)

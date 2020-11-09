@@ -23,10 +23,10 @@ namespace HashFiles
             try
             {
                 collector.ExecuteToFrom(filePathsStash, options.Paths.ToArray<string>());
-                calculator.StartComputingFromTo(collector, filePathsStash, hashSums);
+                calculator.StartComputingFromTo(filePathsStash, hashSums);
 
                 connection.PrepareForWriting();
-                writer.StartFromTo(calculator, hashSums, connection);
+                writer.StartFromTo(hashSums, connection);
 
                 collector.Join();
                 calculator.Join();
@@ -50,8 +50,8 @@ namespace HashFiles
             filePathsStash = new MyConcurrentQueue<string>();
             hashSums = new MyConcurrentQueue<HashFunctionResult>();
             collector = new ThreadFileCollector(options.Recursive);
-            calculator = new ThreadHashSumCalculator(options.ThreadsCount);
-            writer = new ThreadWriter();
+            calculator = new ThreadHashSumCalculator(options.ThreadsCount, options.Verbose);
+            writer = new ThreadWriter(options.Verbose);
 
             var connectionFabrica = new ConnectionFabrica();
             connection = connectionFabrica.CreateConnection(options);

@@ -1,5 +1,4 @@
-﻿using HashFiles.src;
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -10,10 +9,12 @@ namespace HashFiles
         private static Thread thread;
         private MyConcurrentQueue<string> stash;
         private readonly bool recursive;
+        private AutoResetEvent stashReady;
 
         public ThreadFileCollector(bool recursive)
         {
             this.recursive = recursive;
+            stashReady = new AutoResetEvent(false);
         }
 
         public void Join()
@@ -94,6 +95,7 @@ namespace HashFiles
         private void EnqueueFile(string targetFile)
         {
             stash.Enqueue(targetFile);
+            stash.Ready.Set();
         }
     }
 }

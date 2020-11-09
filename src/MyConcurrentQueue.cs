@@ -1,14 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace HashFiles
 {
     public class MyConcurrentQueue<T>
     {
         private Queue<T> queue = new Queue<T>();
+        private AutoResetEvent ready = new AutoResetEvent(false);
+        public AutoResetEvent Ready { get => ready; }
 
         public virtual void Enqueue(T input)
         {
