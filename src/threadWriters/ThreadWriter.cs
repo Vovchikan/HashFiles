@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Threading;
 
 namespace HashFiles.src.threadWriters
@@ -11,7 +10,6 @@ namespace HashFiles.src.threadWriters
         private ConnectionWith connection;
         private Thread thread;
         private bool verbose;
-        private bool hasWork = true;
 
         public ThreadWriter() { }
 
@@ -31,52 +29,46 @@ namespace HashFiles.src.threadWriters
             this.connection = wrCon;
             thread = new Thread(new ThreadStart(() =>
             {
-                while (hasWork)
+                try
                 {
-                    TryAddingDataFromStash();
+                    while (stash.Count > 0 || stash.IsProducering)
+                    {
+                        AddingDataFromStash();
+                    }
                 }
-                if (verbose)
-                    Console.WriteLine($"Writer-Thrd<{Thread.CurrentThread.ManagedThreadId}> FINISHED his work.");
+                catch (Exception e) { HandleException(e); }
+                finally
+                {
+                    if (verbose)
+                        Console.WriteLine($"Thrd<{Thread.CurrentThread.ManagedThreadId}>-Writer: FINISHED his work.");
+                }
             }));
             thread.Start();
         }
 
-        private void TryAddingDataFromStash()
+        private void AddingDataFromStash()
         {
-            try
+            if (stash.Count > 0)
             {
-                AddingDataFromStash();
-            }
-            catch (EmptyConcurrentQueueException)
-            {
-                Timer tmr = new Timer(id =>
+                HashFunctionResult[] results = stash.DequeueAll();
+                foreach (var result in results)
                 {
-                    hasWork = false;
-                    stash.Ready.Set();
-                }, Thread.CurrentThread.ManagedThreadId.ToString(), 5000, Timeout.Infinite);
-                // todo исправить задержку, сделать её зависимой не от времени, а от общего окончания других потоков
+                    connection.SendHashData(result);
+                }
+            }
+            else
                 stash.Ready.WaitOne();
-                tmr.Dispose();
-            }
-            catch (SqlException e)
-            {
+        }
+
+        private void HandleException(Exception e)
+        {
+            if (e is SqlException)
                 Console.WriteLine($"ERROR MESSAGE: {e.Message}");
-                // todo writer не должен перехватывать sqlexception, нужно придумать своё общее исключение
-            }
-            catch (Exception e)
+            else
             {
                 Console.WriteLine($"ERROR MESSAGE: {e.Message}\n" +
                     $"STACKTRACE: {e.StackTrace}");
                 throw e;
-            }
-        }
-
-        private void AddingDataFromStash()
-        {
-            HashFunctionResult[] results = stash.DequeueAll();
-            foreach (var result in results)
-            {
-                connection.SendHashData(result);
             }
         }
     }

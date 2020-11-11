@@ -18,14 +18,6 @@ namespace HashFiles
                 (OptionsForFile options) => myAction.TryMainAction(options),
                 (OptionsForConsole options) => myAction.TryMainAction(options),
                 error => 1);
-
-            //Options mainOptions = null;
-            //Parser.Default.ParseArguments<BdOptions, FileOptions, ConsoleOptions>(args)
-            //    .WithParsed<ConsoleOptions>(opt => mainOptions = opt)
-            //    .WithParsed<BdOptions>(opt => throw new NotImplementedException())
-            //    .WithParsed<FileOptions>(opt => throw new NotImplementedException());
-            Console.WriteLine("End of programm.");
-            Console.ReadKey();
         }
 
         private static string[] InitArgs()

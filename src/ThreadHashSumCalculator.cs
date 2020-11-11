@@ -39,53 +39,48 @@ namespace HashFiles
         {
             this.stash = stash;
             this.results = results;
-            bool hasWork = true;
             for (int i = 0; i < threads.Count(); i++)
             {
-                
                 Thread compute = new Thread(new ThreadStart(() =>
                 {
-                    while (hasWork)
+                    try
                     {
-                        hasWork = TryComputeHashSum();
+                        while (stash.Count > 0 || stash.IsProducering)
+                        {
+                            if (verbose) PrintStageOfWork("compute", null);
+                            ComputeHashSum();
+                        }
                     }
-                    if (verbose) 
-                        PrintStageOfWork("workIsDone", 
-                            Thread.CurrentThread.ManagedThreadId.ToString());
+                    catch (Exception e) { HandleException(e); }
+                    finally 
+                    { 
+                        results.KickProducer();
+                        if (verbose)
+                            PrintStageOfWork("workIsDone",
+                                Thread.CurrentThread.ManagedThreadId.ToString());
+                    }
                 }));
                 threads[i]=compute;
                 compute.Start();
             }
         }
 
-        private bool TryComputeHashSum()
+        private void ComputeHashSum()
         {
-            if (verbose) PrintStageOfWork("trycompute", null);
-            try
+            string fullFilePath;
+            bool successed = stash.TryDequeue(out fullFilePath);
+            if (successed)
             {
-                var fullFilePath = stash.Dequeue();
                 if (verbose) PrintStageOfWork("dequeue", fullFilePath);
                 var result = HashFunction.ComputeMD5Checksum(fullFilePath);
                 if (verbose) PrintStageOfWork("hashResult", result.ToStringShort());
                 results.Enqueue(result);
                 results.Ready.Set();
-                return true;
             }
-            catch (EmptyConcurrentQueueException)
-            {
-                bool hasWork = true;
-                int threadId = Thread.CurrentThread.ManagedThreadId;
-                Timer tmr = new Timer( id =>
-                {
-                    hasWork = false;
-                    stash.Ready.Set();
-                    if (verbose) PrintStageOfWork("timer", id.ToString());
-                }, threadId, 5000, threads.Length);
+            else if (stash.IsProducering)
                 stash.Ready.WaitOne();
-                if (verbose) PrintStageOfWork("timerDispose", null);
-                tmr.Dispose();
-                return hasWork;
-            }
+            else
+                return;
         }
 
         private void PrintStageOfWork(string stage, string att)
@@ -94,30 +89,30 @@ namespace HashFiles
             switch (stage)
             {
                 case "join":
-                    Console.WriteLine($"{owner}: thrd<{att}> JOINED!");
+                    Console.WriteLine($"{owner}: WAITING thrd<{att}>.");
                     break;
                 case "dequeue":
                     FileInfo fi = new FileInfo(att);
-                    Console.WriteLine($"{owner}: FILE {{{fi.Name}}} has been ENQUQUED.");
+                    Console.WriteLine($"{owner}: ENQUQUED {{{fi.Name}}}.");
                     break;
                 case "hashResult":
-                    Console.WriteLine($"{owner}: RESULT {{{att}}} is sending to writer.");
+                    Console.WriteLine($"{owner}: SENDING {{{att}}} to writer.");
                     break;
                 case "workIsDone":
-                    Console.WriteLine($"{owner}: my work is DONE here.");
+                    Console.WriteLine($"{owner}: FINISHED his work.");
                     break;
-                case "timer":
-                    Console.WriteLine($"Timer-{owner}: this thrd<{att}> has NO WORK to do.");
-                    break;
-                case "timerDispose":
-                    Console.WriteLine($"{owner}: DISPOSE my timer!");
-                    break;
-                case "trycompute":
-                    Console.WriteLine($"{owner}: Try COMPUTE hash.");
+                case "compute":
+                    Console.WriteLine($"{owner}: COMPUTING hash.");
                     break;
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        private void HandleException(Exception e)
+        {
+            throw new NotImplementedException();
+            // todo Implement handle exception in CALCULATOR
         }
     }
 }

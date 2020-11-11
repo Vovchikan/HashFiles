@@ -38,28 +38,18 @@ namespace HashFiles
             thread = new Thread(() =>
             {
                 foreach (var path in paths)
-                {
-                    var fullPath = Path.GetFullPath(path);
-                    if (File.Exists(fullPath))
-                        EnqueueFile(fullPath);
-                    else
-                        TryCollectFromDirectory(path);
-                }
+                    try
+                    {
+                        var fullPath = Path.GetFullPath(path);
+                        if (File.Exists(fullPath))
+                            EnqueueFile(fullPath);
+                        else
+                            CollectFromDirectory(fullPath);
+                    }
+                    catch (Exception e) { HandleException(e); }
+                stash.KickProducer();
             });
             thread.Start();
-        }
-
-        private void TryCollectFromDirectory(string fullDirectoryPath)
-        {
-            try
-            {
-                CollectFromDirectory(fullDirectoryPath);
-            }
-            catch (ArgumentException e)
-            {
-
-                Console.WriteLine(e.Message);
-            }
         }
 
         private void CollectFromDirectory(string fullDirectoryPath)
@@ -96,6 +86,11 @@ namespace HashFiles
         {
             stash.Enqueue(targetFile);
             stash.Ready.Set();
+        }
+
+        private void HandleException(Exception e)
+        {
+            Console.WriteLine(e.Message);
         }
     }
 }

@@ -8,7 +8,51 @@ namespace HashFiles
     {
         private Queue<T> queue = new Queue<T>();
         private AutoResetEvent ready = new AutoResetEvent(false);
+        private bool isProducering = true;
+        private int producersCount = 1;
+        private int consumersCount;
+
+        public MyConcurrentQueue()
+        {
+        }
+
+        public MyConcurrentQueue(int producersCount, int consumersCount)
+        {
+            this.producersCount = producersCount;
+            this.consumersCount = consumersCount;
+        }
+
         public AutoResetEvent Ready { get => ready; }
+
+        public int Count
+        {
+            get
+            {
+                lock (this)
+                {
+                    return queue.Count;
+                }
+            }
+        }
+
+        public bool IsProducering 
+        { 
+            get 
+            {
+                lock (this)
+                {
+                    return isProducering;
+                }
+            }
+            private set
+            {
+                lock (this)
+                {
+                    isProducering = false;
+                }
+                WakeUpAllConsumers();
+            }
+        }
 
         public virtual void Enqueue(T input)
         {
@@ -27,14 +71,36 @@ namespace HashFiles
             }
         }
 
-        public int Count
+        public bool TryDequeue(out T elem)
         {
-            get
+            lock (this)
             {
-                lock (this)
+                if (Count == 0)
                 {
-                    return queue.Count;
+                    elem = default(T);
+                    return false;
                 }
+                elem = queue.Dequeue();
+                return true;
+            }
+        }
+
+
+        private void WakeUpAllConsumers()
+        {
+            for (int i = 0; i < consumersCount; i++)
+            {
+                ready.Set();
+            }
+        }
+
+        public void KickProducer()
+        {
+            lock (this)
+            {
+                producersCount--;
+                if (producersCount == 0)
+                    IsProducering = false;
             }
         }
 
