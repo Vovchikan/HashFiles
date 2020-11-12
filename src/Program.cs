@@ -24,8 +24,7 @@ namespace HashFiles
         {
             Console.WriteLine("Start program without args.");
             Console.Write("Enter Dirs\\Files (separated by space): ");
-            string[] args = ("console --paths " + Console.ReadLine()).Split(' '); 
-            // todo использовать свойсво Default у Verbs
+            string[] args = ("console --paths " + Console.ReadLine()).Split(' ');
             return args;
         }
     }

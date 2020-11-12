@@ -111,8 +111,7 @@ namespace HashFiles
 
         private void HandleException(Exception e)
         {
-            throw new NotImplementedException();
-            // todo Implement handle exception in CALCULATOR
+            throw new NotImplementedException($"{this.GetType()}");
         }
     }
 }

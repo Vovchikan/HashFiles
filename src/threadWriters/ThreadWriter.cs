@@ -62,14 +62,7 @@ namespace HashFiles.src.threadWriters
 
         private void HandleException(Exception e)
         {
-            if (e is SqlException)
-                Console.WriteLine($"ERROR MESSAGE: {e.Message}");
-            else
-            {
-                Console.WriteLine($"ERROR MESSAGE: {e.Message}\n" +
-                    $"STACKTRACE: {e.StackTrace}");
-                throw e;
-            }
+            throw new NotImplementedException($"{this.GetType()}");
         }
     }
 }
