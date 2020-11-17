@@ -22,16 +22,6 @@ namespace HashFiles
             thread.Join();
         }
 
-        public Thread GetThread()
-        {
-            return thread;
-        }
-
-        public ThreadState ThreadState
-        {
-            get => thread.ThreadState;
-        }
-
         public void ExecuteToFrom(MyConcurrentQueue<string> stash, params string[] paths)
         {
             this.stash = stash;

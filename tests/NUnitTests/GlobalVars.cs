@@ -1,10 +1,5 @@
 ﻿using NUnit.Framework;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestCollectingFiles
 {
@@ -14,7 +9,7 @@ namespace TestCollectingFiles
         public static int onlyParentTempFilesCount = 0;
         public static string tempDirPath;
         private static readonly string TEMP_DIRRECTORY_NAME = "temp22052020";
-        private static readonly string TEMP_SUBDIRRECTORY_NAME = "temp15102020";
+        private static readonly string TEMP_SUBDIRRECTORY_NAME = "temp 15102020";
         private static readonly string[] TEMP_FILES = 
             { $"file1.txt"
             , $"file2.txt"
@@ -34,9 +29,9 @@ namespace TestCollectingFiles
 
         private static void InitTempFiles(params string[] tempFiles)
         {
-            for (int i = 0; i < TEMP_FILES.Length; i++)
+            for (int i = 0; i < tempFiles.Length; i++)
             {
-                TEMP_FILES[i] = Path.Combine(tempDirPath, TEMP_FILES[i]);
+                tempFiles[i] = Path.Combine(tempDirPath, tempFiles[i]);
             }
 
             if (tempFiles.Length == 0)
