@@ -16,7 +16,7 @@ namespace HashFiles
         private ThreadWriter writer;
         private ConnectionWith connection;
 
-        public int TryMainAction(Options options)
+        public int Start(Options options)
         {
             InitializateFields(options);
 

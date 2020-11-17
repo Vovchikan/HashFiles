@@ -7,8 +7,6 @@ namespace HashFiles.src.options
 {
     public class Options
     {
-        private const string version = "0.1.0";
-        private readonly string heading = $"HashFiles {version}";
         private const string copyright = "Copyright (c) 2020 https://github.com/Vovchikan";
         private readonly bool recursive;
         private readonly IEnumerable<string> paths;
@@ -39,16 +37,18 @@ namespace HashFiles.src.options
         [Option('v', "verbose", Default = false)]
         public bool Verbose { get { return verbose; } }
 
-        public void DisplayHelp<T>(ParserResult<T> result)
+        public static int DisplayHelp<T>(ParserResult<T> result, IEnumerable<Error> errs)
         {
             var helpText = HelpText.AutoBuild(result, h =>
             {
                 h.AdditionalNewLineAfterOption = false;
-                h.Heading = heading;
                 h.Copyright = copyright;
                 return HelpText.DefaultParsingErrorsHandler(result, h);
-            }, e => e);
+            },
+            e => e,
+            verbsIndex: true);
             Console.WriteLine(helpText);
+            return -1;
         }
     }
 }

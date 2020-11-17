@@ -12,19 +12,19 @@ namespace HashFiles
                 args = InitArgs();
 
             var myAction = new MainAction();
-            Parser.Default.ParseArguments<OptionsForSqlDb, OptionsForFile, OptionsForConsole>(args)
-                .MapResult(
-                (OptionsForSqlDb options) => myAction.TryMainAction(options),
-                (OptionsForFile options) => myAction.TryMainAction(options),
-                (OptionsForConsole options) => myAction.TryMainAction(options),
-                error => 1);
+            var parser = new Parser(with => with.HelpWriter = null);
+            var parserResult = parser.ParseArguments<
+                OptionsForConsole, OptionsForFile, OptionsForSqlDb>(args);
+
+            parserResult.WithParsed<OptionsForConsole>(options => myAction.Start(options))
+                .WithParsed<OptionsForFile>(options => myAction.Start(options))
+                .WithParsed<OptionsForSqlDb>(options => myAction.Start(options))
+                .WithNotParsed(errs => Options.DisplayHelp(parserResult, errs));
         }
 
         private static string[] InitArgs()
         {
-            Console.WriteLine("Start program without args.");
-            Console.Write("Enter Dirs\\Files (separated by space): ");
-            string[] args = ("console --paths " + Console.ReadLine()).Split(' ');
+            string[] args = { "--help" };
             return args;
         }
     }
