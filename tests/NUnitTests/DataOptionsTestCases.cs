@@ -13,6 +13,7 @@ namespace NUnitTests
         private static bool defRecursive = false;
         private static bool verbose = false;
         private static bool hideMode = false;
+        private static bool overwrite = false;
 
         public static IEnumerable TestCasesConnectionFabrica
         {
@@ -37,7 +38,7 @@ namespace NUnitTests
 
         private static OptionsForFile CreateFileOptions()
         {
-            return new OptionsForFile(OptionsForFile.defaultOutputDirPath, OptionsForFile.defaultFileName,
+            return new OptionsForFile(OptionsForFile.defaultOutputDirPath, OptionsForFile.defaultFileName, overwrite,
                 paths, defRecursive, Options.defaultThreadsCount, verbose);
         }
 

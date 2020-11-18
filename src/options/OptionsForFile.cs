@@ -8,15 +8,17 @@ namespace HashFiles.src.options
     {
         private readonly string outputDirPath;
         private readonly string fileName;
+        private readonly bool overwrite;
         public const string defaultOutputDirPath = ".\\data";
         public const string defaultFileName = "output.txt";
 
-        public OptionsForFile( string outputDirPath, string fileName,
+        public OptionsForFile( string outputDirPath, string fileName, bool overwrite,
             IEnumerable<string> paths, bool recursive, 
             int threadsCount, bool verbose) : base(paths, recursive, threadsCount, verbose)
         {
             this.outputDirPath = outputDirPath;
             this.fileName = fileName;
+            this.overwrite = overwrite;
         }
 
         [Option('o', "output", Default = defaultOutputDirPath,
@@ -26,5 +28,9 @@ namespace HashFiles.src.options
         [Option('n', "name", Default = defaultFileName,
             HelpText = "Name of output file. For ex. - \"output.txt\".")]
         public string FileName { get { return fileName; } }
+
+        [Option("overwrite", Default = false,
+            HelpText = "Overwrite the output file, if this file already exists.")]
+        public bool Overwrite { get { return overwrite; } }
     }
 }

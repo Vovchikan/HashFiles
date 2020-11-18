@@ -1,11 +1,14 @@
-﻿using HashFiles.src.options;
-using System;
+﻿using System;
+using System.IO;
+
+using HashFiles.src.options;
 
 namespace HashFiles.src.threadWriters
 {
     public class ConnectionWithFile : ConnectionWith
     {
         private OptionsForFile fileOpt;
+        private StreamWriter outputFile;
 
         public ConnectionWithFile(OptionsForFile fileOpt)
         {
@@ -14,17 +17,27 @@ namespace HashFiles.src.threadWriters
 
         public override void Close()
         {
-            throw new NotImplementedException();
+            if (outputFile != null)
+            {
+                outputFile.Close();
+            }
         }
 
         public override void PrepareForWriting()
         {
-            throw new NotImplementedException();
+            var filePath = Path.Combine(fileOpt.OutputDirPath, fileOpt.FileName);
+            if (!File.Exists(filePath) || fileOpt.Overwrite)
+            {
+                Directory.CreateDirectory(fileOpt.OutputDirPath);
+                outputFile = File.CreateText(filePath);
+            }
+            else
+                outputFile = new StreamWriter(new FileStream(filePath, FileMode.Append));
         }
 
         public override void SendHashData(HashFunctionResult res)
         {
-            throw new NotImplementedException();
+            outputFile.WriteLine(res.ToString());
         }
     }
 }
